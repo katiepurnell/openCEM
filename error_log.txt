@@ -1,0 +1,7 @@
+Errors encountered
+Katelyn Purnell
+
+Master pulled 11/08/20. Running with Gurobi solver.
+
+11/08/20 Log
+- original pytest --solver=gurobi fail on two counts to do with the json test:  test_jsonify_sol(solution) and test_json_carry_fwd_cap(solution) from AssertionErrors -> answer is off by 0.001 (1582.096/1582.095) for 'index': (9, 15), 'value': 1582.096. Normal cbc solver also fails on same tests -> but at different parts -> test_json_carry_fwd_cap(solution): {'index': 10, 'value': 546765651.356} vs {'index': 10, 'value': 639636565.167}, test_jsonify_sol(solution): at 5 different points:  {'index': (10, 16), 'value': 0.0} != {'index': (10, 16), 'value': 2119.306},

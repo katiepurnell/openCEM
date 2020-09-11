@@ -1,0 +1,11 @@
+##### TO DO ########
+
+- make percent v2g & smart a list for tech type not for all
+- modify read in file for exo cap for evs to include number of VEHICLES
+- modify graphs to only include generators not empty
+- labels to be outside plot
+- run full sim to make sure it works outside -t
+- get the demand trace graph displaying properly with evs 
+
+DONE LOG
+- ev graphs to only include ev plabels KP_MODIFIED_070920

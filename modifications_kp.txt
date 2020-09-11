@@ -1,0 +1,175 @@
+Modifications made from master
+Katelyn Purnell
+
+python msolve.py s2_nsw_evs_uncontrolled.cfg --solver=gurobi -t
+opencem
+
+Master pulled 11/08/20. Running with Gurobi solver.
+Key assumptions / limitations:
+1. No initial EV capacity in 2020 for any mode -> seems largely reasonable given extremely small AU uptake and almost no impact on AEMO demand traces at this time.
+2. I have included EVs in operating reserve calcs -> Perhaps it shouldn't be... Make sure plot it in comparison with other reserves in utils to see the impact.
+
+12/08/20 Log
+- Added scenario01 from the openCEM_examples file to check it all works ok. Also copied the ISPNeutral file and additional_techs file from that.
+- Modified the output files to save to /scenarios/scenarioname rather than /scenarioname in msolve.py --> Works for -t
+- Added plotting function & printing results to a db in utils.py. Saving graphs and csv to same folder under /results. Also had to add a variable for year & scenario name in multi.py to enable filenaming (also had to add 20 & 28 to DISPLAY_ORDER in const.py, add 26,27,28 to PALETTE in const.py) Also need to install pathlib module - so put it in the requirements.txt (not sure if this runs, just pip installed it), also needs pandas library. Works for -t
+- Tested nsw only version to check ability to run states separately. scenario01_nsw.cfg file. Works for -t
+
+13/08/20 - 17/08/20 Log
+- Switching over to the new opencem database which has ISP2020 values. Modified multi.py to source from new db. Modified ISPNeutral.cfg to source from new db and specify sourceid = 3 (ISP2020) and demand id =7 (Central Scenario). Added new gen tech into const.py to align with ISP2020 & default values changed. Clarified the tables in the .dat file. Capex table has a changed column name so modified this. The hybrid traces were previously sourcing from opencem_community NOT opencem_input - changed that here. demand_and_rooftop_traces also has changed columns - now including evs & ess as separate columns (still included in the total demand I believe) and pv * pv+ non-scheduled pv gen as separate columns. The EV column is per state + for all assumed vehicles uptaken. Will need to separate this from gross demand later. Seems like its worrking in -t but throwing up another error "
+Error thrown for Constraint 'con_max_mwh_nem_wide[34]'" related to ValueError: Invalid constraint expression. The constraint expression resolved to a trivial Boolean (True) instead of a Pyomo object. Please modify your rule to return Constraint.Feasible instead of True. Thinking it might be a problem in reading in the gen_disp variable... In Joses update he removed the bounds from the model.py. Also updated the rules.py doc in case thats it. Didn't include the updates in multi re. Paths. Also updated jsonify.py per his updates.
+  - Seems to only have a problem when including both 1: Biomass and 34: Biomass new in the cfg file (tech list + tech in regions). Tested for both only including 1 and only including 34 and both seem to work.
+  - Works on test - but only seems to run one year???
+    - In multi.py Jose had added clause to only run one year if in template test. Disabled now.
+
+17/8/20 Log: KP_MODIFIED_170820
+- Subtracting EVs from the demand trace (reading in from the my sql workbench) - changing in the ISP2020Central.dat file. Adding another variable to copy the demand one for region_net_demand_less_evs in model.py as well as aemo_ev in the same file. Modifying rules to replace regiona_net_demand with these two traces summed. Left it clustering over the total region_net_demand in cluster.py. Added more graphs in utils.py.
+    - tested in testy mode and works fine.
+
+18/8/20 Log: KP_MODIFIED_180820
+- Created new db structure for ev traces -> `em_kp_2020` hosted on my local. Now in format like other tables with profile_id (EOS=1 / DS=2) and scenario_id (BAU=1) tables. each mode inputted as a column for all dates in one hour increments. 3 separate tables to reference: "transport_kw", "charging_kw" and "connected". Created new script to more easily add tables / input from excel: E:\OneDrive - UNSW\PhD\Modelling\EVOpenCEM\input_all.sql
+- Now modifying rules + model + multi + .dat + const + utils + jsonify + initilisers + cluster to read in these evs. Only doing one mode for the time being.
+- N.B. I've set it up in a way that assumes no initial EV capacity in 2020 - would need to modify it in multi.py in carry_forward if want to change it later.
+- N.B. Traces are in kW for EVs -> what is it for the hybrid traces? Will need to check whether to add the 1e3 or possibly 1e6 if the base unit is GW
+- first testing all changes with no evs enabled in the cfg file. Threw up an error from mysql: pymysql.err.InternalError: (1241, 'Operand should contain 1 column(s)') but didn't say why. Guessing its cause I've tried to remove zones for the ev traces while the variables still have zones in them. Going to try to remove them:
+      - #KP_MODIFIED_180820_2: removed zone from ev_connected as its a percentage and doesn't need it anyway. Also changed ev_charge_dumb_trace & ev_trans_trace to tech, time, but the error is still occuring. Unhid the exocap folder
+
+31/8/20 Log: KP_MODIFIED_310820
+- Attempting to get the db to work. Perhaps its a db issue?
+- Attempt 1: commented out the mysql reading in the ev traces. Works. Will try each by itself.
+  - connected trace: chucks the same error. I think its from the AND (technology_type_id) IN [evtechdb] line -> because evtechdb has zones too. Trying replacing that with [evtechlist]. Got new error: "pymysql.err.ProgrammingError: (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '99\n            GROUP BY technology_type_id, timestamp) as t2\n    on t1.technolog' at line 7")" -> referred back to the original hybrid mysql query and modified. Got the same error message.
+  - Fixed I think -> [evtechdb] needed () around it.
+
+  New error: "RuntimeError: Failed to set value for param=ev_cap_exo, index=(5, 52), value=1.0.
+        source error message="Index '(5, 52)' is not valid for indexed component 'ev_cap_exo'"
+        - New error: Only completes for 1 year when don't include EVs.
+        - The hyb cap exo and csv file works when including hyb tech 22 in the exo csv so thats not the issue probably
+        - Tried changing the value frrom 78 to 5000 to see if its the size - registered the change.... but hasn't fixed it.
+        - Added ev_tech_per_zone into the .dat file fingers crossed - this works. Works!
+
+  New error: "ValueError: Error retrieving immutable Param value (cost_ev_fom[70]):
+        The Param value is undefined and no default value is specified."
+        - Changing the additional_techs.csv file to include EVs. Only added 70 (techid) and no zone as per convention in hyb. Works.
+
+  New error: "AttributeError: 'AbstractModel' object has no attribute 'ev_disp'"
+      - changed tp ev_v2g_disp in rules and utils. Works.
+
+  Removed the line in multi from ISP2020 update re. if template test = True, only do the first year.
+
+  New error now that it is doing multi year -> "File "E:\OneDrive - UNSW\PhD\Modelling\EVOpenCEM\cemo\jsonify.py", line 473, in fill_complex_var     'value': 0 if -1e-6 < var[i].value < 0 else scale * var[i].value TypeError: '<' not supported between instances of 'float' and 'NoneType'" -> from fill_complex_var(inst.gen_cap_op) in jsonify
+      - something to do with fill_complex_var(inst.gen_cap_op) i think -> tried to change the ISP change to mutable back to original (jsonopcap0) to no avail... in jsonify
+
+  It is now not calculating any temporal changes for the ev traces.... gets capacity right... still only doing 1 year
+
+1/9/20 Log: KP_MODIFIED_010920
+
+  Above error in value limits: related to jsonopcap0 when going to the next year. Testing without EVs to check. Works fine. So EV problem.
+    - jsonify \\ jsonopcap0 \\ ev_cap_initial
+    - probably something to do with not saving properly in the carryforwardcap in multi.py. Only on second year (fine for gathering directly from the db at the first year...). Saving in the gen_cap_op2020.json file.
+        - Actually seems to be fine... "ev_cap_initial": [{"index": [5, 50], "value": 7800.0}, {"index": [5, 70], "value": 5000.0}]
+        - Thinks its struggling to add it to the json file for 2025 actually. Maybe a problem adding exo + not building?
+        - But for (5,2) - zone + tech type?
+        - Added EVs to no-build tech in consts - Didn't fix it.
+        - Maybe its something to do with the dispatch -> can't figure out how to use it? Rules are wrong perhaps?
+        - So trying to solve the traces first with the hopes that this solves this problem too.
+            - testing the transport_trace reading in. It doesn't read in for 2020, but does for 2025 -> probably because my traces start halfway through this year! Testing starting the sim from 2021.
+
+            - Now its reading in for the first year and throwing errors before first year results. Good! transport trace for 70 (freight) = 1.4199999570846558 - which is in kW. Number of vehicles seems to be empty? Or stored differently. This might be the error. So the ev_cap_op seems not to be right. Ties in with last error. Which is why num_vehicles is wrong too.
+              - tried to remove the 1e-3 from all ev_cap_op calcs which didn't work.
+              - I think its just that the model doesn't solve when you include evs -> so my rules probably don't make sense.
+
+
+3/9/20 Log: KP_MODIFIED_030920
+  At this point I think its easier just to change the underlying database to include zones and just deal with it. Otherwise I'm going to have to shift through the pyomo documentation and figure out exactly what datatype everything is.
+  Will try one last thing -> checking that v2g & % smart enabled are ok. AND making sure to multiply the underlying traces so they're in MW.
+
+  - EVs now dispatching. Tested for 50 and runs. Although the withevs_dispatch_allgen graph looks very weird post 2026. Tested for 50-53. Works. Tested for 60+61 - works until 2031 and then spits out: ValueError: No value for uninitialized NumericValue object gen_cap_op[5,2].... Tested without 61 - same issue. Testing with 61 and not 60. Works without buses (60) - maybe something in the trace? The same thing happens for 70 = freight. Works for 2021+2026 and gets this error for 2031: "fill_complex_var(inst.gen_cap_op),      File "E:\OneDrive - UNSW\PhD\Modelling\EVOpenCEM\cemo\jsonify.py", line 476, in fill_complex_var    'value': 0 if -1e-6 < var[i].value < 0 else scale * var[i].value".
+        - testing 70 on its own - works when not including other evs...?!
+        - testing 60 on its onw - works.
+        - might be that all the evs together are triggering the max capacity per zone limit of 2.5e4...changed to 2.5e5 - works.
+
+  - Testing multi-zone evs -> adding some to 6.
+
+7/9/20 Log: KP_MODIFIED_070920
+  - Fixing up graphs to show more detail about evs - tidy up labels etc.
+  - Checking overall results -> its dispatching in 2021 x1000% more than bau for nsw evs.... so likely a coefficient issue in the ev traces.
+
+8/9/20 Log: KP_MODIFIED_080920
+  - New error. init_year_correction_factor ;  year = datetime.datetime.strptime(model.t.last(), in init.py; IndexError: Valid index values for sets are 1 .. len(set) or -1 .. -len(set)
+    - maybe problem with t when i modified something yesterday?
+    - have gone through and done split-diff on backup from 4/9/20 saved on dropbox. No fundamental change in multi, model, msolve, rules, inits. Changes in utils but that shouldnt impact the results. Changed back the _get_textid(table) to not include zones and its still producing the same error. Nothing in jsonify, const or cluster either.
+    - Happened before I closed the cmd i believe - but just in case, checking the conda env and cmd line
+      - HAVENT BEEN USING GUROBI SOLVER - this didn't solve it
+      - have been using openCEM env - testing opencem env - also didn't work
+    - OK gone back and checked through every file:
+      - rules.py - 3 diffs in con_ldbal (1 comment line, 1e3* for v2g and ev_charge)
+      - utils.py has changes - both nothing that looks like it should fuck it up. Tested commenting this out and the error still occurs. Where on earth is the change that has caused this error?
+    - Tried updating datetime... didn't work.
+    - Trying creating new env from jose's environment file opencem1 - comes up with errors importing matplotlib.pyplot in utils file... switched back to openCEM env
+    - Tried remove the test -t - same error.
+    - Testing the dropbox file - maybe I can reboot it from there? Has the same error
+    - Maybe gurobi needs to be Gurobi?? Nope, same error.
+    - OK uninstalling and reinstalling pyomo. - installed new PyUtilib-6.0.0 pyomo-5.7 . Very weird new errors now!
+      - ERROR: Unable to clone Pyomo component attribute. Component 'regions' contains
+    an uncopyable field '_init_values' (<class
+    'pyomo.core.base.set.TuplizeValuesInitializer'>)
+      - uninstalled these later modules and installed the ones in environment.yml - no luck.
+    - Maybe its got a problem now using existing folders? Started new folder & cfg file with reduced years, from scratch - s1_nsw_bau_why - nope! Tried changing first year to 2020 from 2021. Nope!
+
+    - Error message in full:
+              ERROR: Constructing component 'year_correction_factor' from data=None failed:
+              IndexError: Valid index values for sets are 1 .. len(set) or -1 ..
+              -len(set)
+
+              Traceback (most recent call last):
+                  File "msolve.py", line 112, in <module>
+                    X.solve()
+                  File "E:\OneDrive - UNSW\PhD\Modelling\EVOpenCEM\cemo\multi.py", line 926, in solve
+                    inst = model.create_instance(year_template)
+                  File "C:\Users\user\Anaconda3\envs\openCEM\lib\site-packages\pyomo\core\base\PyomoModel.py", line 735, in create_instance
+                    profile_memory=profile_memory )
+                  File "C:\Users\user\Anaconda3\envs\openCEM\lib\site-packages\pyomo\core\base\PyomoModel.py", line 792, in load
+                    profile_memory=profile_memory)
+                  File "C:\Users\user\Anaconda3\envs\openCEM\lib\site-packages\pyomo\core\base\PyomoModel.py", line 856, in _load_model_data
+                    self._initialize_component(modeldata, namespaces, component_name, profile_memory)
+                  File "C:\Users\user\Anaconda3\envs\openCEM\lib\site-packages\pyomo\core\base\PyomoModel.py", line 910, in _initialize_component
+                    declaration.construct(data)
+                  File "C:\Users\user\Anaconda3\envs\openCEM\lib\site-packages\pyomo\core\base\param.py", line 869, in construct
+                    self._initialize_from(self._rule)
+                  File "C:\Users\user\Anaconda3\envs\openCEM\lib\site-packages\pyomo\core\base\param.py", line 654, in _initialize_from
+                    self._setitem_when_not_present(None, _init(self.parent_block()))
+                  File "E:\OneDrive - UNSW\PhD\Modelling\EVOpenCEM\cemo\initialisers.py", line 19, in init_year_correction_factor
+                    year = datetime.datetime.strptime(model.t.last(), '%Y-%m-%d %H:%M:%S').year
+                  File "C:\Users\user\Anaconda3\envs\openCEM\lib\site-packages\pyomo\core\base\sets.py", line 419, in last
+                    return self[len(self)]
+                  File "C:\Users\user\Anaconda3\envs\openCEM\lib\site-packages\pyomo\core\base\sets.py", line 1316, in __getitem__
+                    return _OrderedSetData.__getitem__(self, key)
+                  File "C:\Users\user\Anaconda3\envs\openCEM\lib\site-packages\pyomo\core\base\sets.py", line 439, in __getitem__
+                    raise IndexError("Valid index values for sets are 1 .. len(set) or -1 .. -len(set)")
+                IndexError: Valid index values for sets are 1 .. len(set) or -1 .. -len(set)
+      - So this is saying that the datetime.datetime.strptime(model.t.last(), '%Y-%m-%d %H:%M:%S').year has no data - so model.t
+        - but in model.py it is never actually initialised or set...
+
+      - Maybe it messed up when trying to git add and I added the example & analysis folders - and scenarios.
+        - when I run pytest now it goes from analysis folder:
+
+                ________________________ ERROR collecting openCEM_analysis/json_sqlite/tests/test_config.py ________________________
+                ImportError while importing test module 'E:\OneDrive - UNSW\PhD\Modelling\EVOpenCEM\openCEM_analysis\json_sqlite\tests\test_config.py'.
+                Hint: make sure your test modules/packages have valid Python names.
+                Traceback:
+                openCEM_analysis\json_sqlite\tests\test_config.py:5: in <module>
+                    from cemo_outputs import CONFIG, MODULE_DIR
+                E   ModuleNotFoundError: No module named 'cemo_outputs'
+                ____________________ ERROR collecting openCEM_analysis/json_sqlite/tests/test_python_parser.py _____________________
+                c:\users\user\anaconda3\envs\opencem\lib\site-packages\_pytest\python.py:511: in _importtestmodule
+                    mod = self.fspath.pyimport(ensuresyspath=importmode)
+                c:\users\user\anaconda3\envs\opencem\lib\site-packages\py\_path\local.py:701: in pyimport
+                    __import__(modname)
+                E     File "E:\OneDrive - UNSW\PhD\Modelling\EVOpenCEM\openCEM_analysis\json_sqlite\tests\test_python_parser.py", line 2
+                E       json test
+                E               ^
+                E   SyntaxError: invalid syntax
+                2 error in 1.46 seconds
+
+
+        - removed these folders and added /scenarios to git ignore. lets try again. Still spits out this error.
