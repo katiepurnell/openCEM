@@ -793,6 +793,9 @@ group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
         Assemble full simulation output as metadata+ full year results in each simulated year
         """
         for y in self.Years:
+            print("YEAR: {}".format(y))
+            yearyear = y #KP_MODIFIED
+            scen_name = self.Name #KP_MODIFIED
             if self.resume:
                 if (self.wrkdir / (str(y)+'.json')).exists():
                     print("Skipping year %s" % y)
@@ -839,7 +842,7 @@ group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
                 json.dump(jsonify(inst, y), json_out)
                 json_out.write('\n')
 
-            printstats(inst)
+            printstats(inst,scen_name,yearyear)
 
             del inst  # to keep memory down
         # Merge JSON output for all investment periods

@@ -74,10 +74,17 @@ args = parser.parse_args()
 
 # Read configuration file name from
 cfgfile = Path(args.config)
+cfgfilescenarios = Path("scenarios"/cfgfile)
 
-SIM_DIR = Path(cfgfile).parent / Path(cfgfile).stem
+# SIM_DIR = Path(cfgfile).parent / Path(cfgfile).stem
+SIM_DIR = Path(cfgfilescenarios).parent / Path(cfgfilescenarios).stem
 if not SIM_DIR.exists():
     SIM_DIR.mkdir()
+
+RESULTS_DIR = Path(SIM_DIR/"results")#"scenarios/"+cfgfile.split(".")[0] + "/results/"
+# print(RESULTS_DIR)
+if not RESULTS_DIR.exists():
+    RESULTS_DIR.mkdir()  #KP_MODIFIED Jose ISP2020
 
 # create Multi year simulation
 X = SolveTemplate(
@@ -88,7 +95,6 @@ X = SolveTemplate(
     resume=args.resume,
     templatetest=args.templatetest
 )
-
 
 # instruct the solver to launch the multi year simulation
 print(

@@ -13,11 +13,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pyomo.environ import value
 from si_prefix import si_format
+import pandas as pd
 
 import cemo.const
 import cemo.rules
 
-
+results_dir = "E:/OneDrive - UNSW/PhD/Modelling/openCEMKP/scenarios/" #KP_MODIFIED
 def printonly(instance, key):  # pragma: no cover
     '''pprint specified instance variable and exit'''
     if key == "all":
@@ -29,8 +30,6 @@ def printonly(instance, key):  # pragma: no cover
             print("openCEM solve.py (printonly): Model key '%s' does not exist in model"
                   % key)
             sys.exit(1)
-
-
 def _get_textid(table):
     '''Return text label for technology from const module'''
     switch = {
@@ -38,8 +37,6 @@ def _get_textid(table):
         'region': cemo.const.REGION
     }
     return switch.get(table, lambda: "Name list not found")
-
-
 def _techsinregion(instance, region):  # pragma: no cover
     techsinregion = set()
     # Populate with intersecton of .gen_tech_per_zone set for all zones in region
@@ -48,15 +45,12 @@ def _techsinregion(instance, region):  # pragma: no cover
         techsinregion = techsinregion | instance.hyb_tech_per_zone[z]()
         techsinregion = techsinregion | instance.stor_tech_per_zone[z]()
     return sorted(techsinregion, key=cemo.const.DISPLAY_ORDER.index)
-
-
 def palette(instance, techsinregion):  # pragma: no cover
     '''Return a palette of tech colours for the set of techs in region given'''
     pal = cemo.const.PALETTE
     return [pal[k] for k in techsinregion]
 
-
-def plotresults(instance):  # pragma: no cover
+def plotresults(instance, out,yearyear):  # pragma: no cover
     """ Process results to plot.
      Feel free to improve the efficiency of this code
     """
@@ -113,10 +107,111 @@ def plotresults(instance):  # pragma: no cover
         ax.set_title(rname[r])  # Region names
 
         fig.autofmt_xdate()
-    plt.show()
+    # plt.show()
+    plt.savefig(results_dir + out  +'/results/' + out  +'_dispatch_allgen_'+str(yearyear)+'.png')
+def save_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    hours = float(len(inst.t))
+    techtotal = [0] * len(inst.all_tech)
+    disptotal = [0] * len(inst.all_tech)
+    capftotal = [0] * len(inst.all_tech)
+    nperz = [0] * len(inst.all_tech)
+    idx = list(inst.all_tech)
+    for z in inst.zones:
+        for n in inst.gen_tech_per_zone[z]:
+            techtotal[idx.index(n)] += value(inst.gen_cap_op[z, n])
+            disptotal[idx.index(n)] += value(sum(inst.gen_disp[z, n, t]
+                                                 for t in inst.t))
+            capftotal[idx.index(n)] += value(sum(inst.gen_cap_factor[z, n, t]
+                                                 for t in inst.t))
+            nperz[idx.index(n)] += 1
+        for s in inst.stor_tech_per_zone[z]:
+            techtotal[idx.index(s)] += value(inst.stor_cap_op[z, s])
+            disptotal[idx.index(s)] += value(sum(inst.stor_disp[z, s, t]
+                                                 for t in inst.t))
+            capftotal[idx.index(s)] += 0.5 * hours
+            nperz[idx.index(s)] += 1
+
+        # for e in inst.ev_tech_per_zone[z]:
+        #     techtotal[idx.index(e)] += value(inst.ev_cap_op[z, e])
+        #     disptotal[idx.index(e)] += value(sum(inst.ev_v2g_disp[z, e, t]
+        #                                          for t in inst.t))
+        #     capftotal[idx.index(e)] += 0.5 * hours
+        #     nperz[idx.index(e)] += 1
+
+        for h in inst.hyb_tech_per_zone[z]:
+            techtotal[idx.index(h)] += value(inst.hyb_cap_op[z, h])
+            disptotal[idx.index(h)] += value(sum(inst.hyb_disp[z, h, t]
+                                                 for t in inst.t))
+            capftotal[idx.index(h)] += value(sum(inst.hyb_cap_factor[z, h, t]
+                                                 for t in inst.t))
+            nperz[idx.index(h)] += 1
 
 
-def plotcapacity(instance):  # pragma: no cover
+    df = pd.DataFrame()
+    df['Nem Cap Total'] = [sum(techtotal)]
+    df['Nem Disp Total'] = [sum(disptotal)]
+    for r in inst.regions:
+        load = sum(inst.region_net_demand[r, t] for t in inst.t) #(np.array([value(inst.region_net_demand[r, t]) for t in inst.t]))
+        # load_less_evs = sum(inst.region_net_demand_less_evs[r, t] for t in inst.t) #KP_MODIFIED_170820
+        # aemo_ev_load = sum(inst.aemo_ev[r, t] for t in inst.t) #KP_MODIFIED_170820
+        # df['Total Load'] = [sum(load)/1000]
+        df['Load_'+str(rname[r])] = [load] #[sum(load)/1000]
+        # df['Load_less_evs'+str(rname[r])] = [load_less_evs] #KP_MODIFIED_170820
+        # df['Load_aemo_ev'+str(rname[r])] = [aemo_ev_load] #KP_MODIFIED_170820
+
+    for j in inst.all_tech:
+        if techtotal[idx.index(j)] > 0:
+            df['Capcity'+str(tname[j])] = [techtotal[idx.index(j)] * 1e6]
+            df['dispatch'+str(tname[j])] = [disptotal[idx.index(j)] * 1e6]
+            df['avg cap factor'+str(tname[j])] = [disptotal[idx.index(j)] / hours / techtotal[idx.index(j)]* 1e3]
+
+    # df['Total Cost'] = [locale.currency(value(inst.Obj - cemo.rules.cost_shadow(inst)))]
+
+    df['Total Cost'] = [locale.currency(value(cemo.rules.system_cost(inst)))]
+    df['Shadow Costs'] = [locale.currency(value(cemo.rules.cost_shadow(inst)))]
+    df['Dan Obj Less Shadow'] = [locale.currency(value(inst.Obj - cemo.rules.cost_shadow(inst)))]
+
+    df["Overall LCOE"] = [locale.currency(value((inst.Obj - cemo.rules.cost_shadow(inst)) / sum(inst.region_net_demand[r, t]
+                                                                                for r in inst.regions
+                                                                                for t in inst.t)))]
+
+    df["Total Build Cost"] = [locale.currency(value(cemo.rules.cost_capital(inst)))]
+    df["Build cost endo"]=[locale.currency(sum(value(cemo.rules.cost_build_per_zone_model(inst, zone) - inst.cost_cap_carry_forward[zone]) for zone in inst.zones))]
+    df["Build cost exo"]=[locale.currency(sum(value(cemo.rules.cost_build_per_zone_exo(inst, zone) - inst.cost_cap_carry_forward[zone]) for zone in inst.zones))]
+
+    df["Repayment cost"]=[locale.currency(value(sum(inst.cost_cap_carry_forward[z] for z in inst.zones)))]
+    df["Operating cost"] =[locale.currency(value(cemo.rules.cost_operating(inst)))]
+    df["Fixed cost"] =[locale.currency(value(cemo.rules.cost_fixed(inst)))]
+    df["Trans. build cost"]= [locale.currency(value(cemo.rules.cost_trans_build(inst)))]
+
+    df["Trans. build cost endo"]=[locale.currency(sum(value(cemo.rules.cost_trans_build_per_zone_model(inst, zone)) for zone in inst.zones))]
+    df["Trans. build cost endo"]=[locale.currency(sum(value(cemo.rules.cost_trans_build_per_zone_exo(inst, zone)) for zone in inst.zones))]
+    df["Trans. flow cost"]=[locale.currency(value(cemo.rules.cost_trans_flow(inst)))]
+    df["Unserved cost"]=[locale.currency(value(cemo.rules.cost_unserved(inst)))]
+
+    df["Emission cost"]=[locale.currency(value(cemo.rules.cost_emissions(inst)))]
+    df["Retirmt cost"]=[locale.currency(value(cemo.rules.cost_retirement(inst)))]
+
+    total_emissions = 0
+    total_dispatch = 0
+    for r in inst.regions:
+        total_emissions = total_emissions + value(cemo.rules.emissions(inst, r))
+        total_dispatch = total_dispatch + value(cemo.rules.dispatch(inst, r))
+    emrate = total_emissions/(total_dispatch+ 1.0e-12) # so its not dividing by 0
+    df["Emissions rate kg MWh"]=[emrate]
+
+    # for r in inst.regions:
+    #     for z in inst.zones_per_region[r]:
+    #         for n in inst.gen_tech_per_zone[z]:
+    #             df["LCOE Cost" + str(tname[n])] = [locale.currency(value(cemo.rules.cost_lcoe(inst, n)))]
+    #         for s in inst.stor_tech_per_zone[z]:
+    #             df["LCOE Cost" + str(tname[s])] = [locale.currency(value(cemo.rules.cost_lcoe(inst, s)))]
+    #         for e in inst.ev_tech_per_zone[z]:
+    #             df["LCOE Cost" + str(tname[e])] = [locale.currency(value(cemo.rules.cost_lcoe(inst, e)))]
+    df.to_csv(results_dir + out  +'/results/' +out+'_results_'+str(yearyear)+'.csv')
+def plotcapacity(instance, out,yearyear):  # pragma: no cover
     """ Stacked plot of capacities
      Feel free to improve the efficiency of this code
     """
@@ -175,9 +270,8 @@ def plotcapacity(instance):  # pragma: no cover
         for tick in ax.get_xticklabels():
             tick.set_rotation(90)
         ax.set_title(rname[r], position=(0.9, 0.9))  # Region names
-    plt.show()
-
-
+    # plt.show()
+    plt.savefig(results_dir + out  +'/results/' + out  +'_capacity_allgen_'+str(yearyear)+'.png')
 def _printcosts(inst):
     locale.setlocale(locale.LC_ALL, 'en_AU.UTF-8')
     print("Total Cost:\t %20s" %
@@ -209,15 +303,11 @@ def _printcosts(inst):
     print("Retirmt cost:\t %20s" %
           locale.currency(value(cemo.rules.cost_retirement(inst)),
                           grouping=True))
-
-
 def _printemissionrate(instance):
     emrate = sum(value(cemo.rules.emissions(instance, r))
                  for r in instance.regions) /\
         (sum(value(cemo.rules.dispatch(instance, r)) for r in instance.regions) + 1.0e-12)
     print("Total Emission rate: %6.3f kg/MWh" % emrate)
-
-
 def _printunserved(instance):
     regions = list(instance.regions)
     unserved = np.zeros(len(regions), dtype=float)
@@ -229,8 +319,6 @@ def _printunserved(instance):
             / sum(value(instance.region_net_demand[region, time]) for time in instance.t)
 
     print('Unserved %:' + str(unserved))
-
-
 def _printcapacity(instance):
     tname = _get_textid('technology_type')
     hours = float(len(instance.t))
@@ -280,12 +368,17 @@ def _printcapacity(instance):
             ))
 
 
-def printstats(instance):
+def printstats(instance,scen_name,yearyear):
     """Print summary of results for model instance"""
     _printcapacity(instance)
     _printcosts(instance)
     _printunserved(instance)
     _printemissionrate(instance)
+
+    plotresults(instance, scen_name, instance.name)
+    save_results(instance, scen_name, instance.name)
+    plotcapacity(instance, scen_name, instance.name)
+
     print("End of results for %s" % instance.name, flush=True)
 
 
