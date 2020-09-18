@@ -53,6 +53,24 @@ def init_stor_charge_hours(model, tech):
     '''Default charge hours for storage tech'''
     return cemo.const.DEFAULT_STOR_PROPS.get(tech).get("charge_hours", 0)
 
+def init_ev_rt_eff(model, tech):
+    # pylint: disable=unused-argument
+    '''Default return efficiency for ev techs'''
+    return cemo.const.DEFAULT_EV_PROPS.get(tech).get("rt_eff", 0)
+
+def init_ev_charge_rate(model, tech):
+    # pylint: disable=unused-argument
+    '''Default charge rate for ev tech'''
+    return cemo.const.DEFAULT_EV_PROPS.get(tech).get("charge_rate", 0)
+
+def init_ev_batt_size(model, tech):
+    # pylint: disable=unused-argument
+    '''Default battery size for ev tech'''
+    return cemo.const.DEFAULT_EV_PROPS.get(tech).get("default_batt_size", 0)
+
+def init_ev_trans_trace(model,zone,ev_tech,time):
+    return model.ev_trans_trace[ev_tech,time] * model.ev_cap_op[zone,ev_tech] / model.ev_batt_size[ev_tech]
+
 
 def init_zone_demand_factors(model, zone, timestamp):
     dt = datetime.datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')

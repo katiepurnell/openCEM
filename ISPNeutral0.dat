@@ -1,4 +1,10 @@
 # NEM ISP template scenario
+set regions :=
+[regions];
+
+set zones :=
+[zones];
+
 set all_tech :=
 [alltech];
 # Set of generator technologies available in each zone
@@ -27,7 +33,7 @@ set disp_gen_tech_in_zones :=
 [dispgentech];
 
 # Set of dispatchable generators
-set disp_gen_tech_in_zones :=
+set re_disp_gen_tech_in_zones :=
 [redispgentech];
 
 #Set of storage technologies in each zones
@@ -37,6 +43,10 @@ set stor_tech_in_zones :=
 # Set of hybrid technologies available in each zone
 set hyb_tech_in_zones :=
 [hybtech];
+
+# Set of ev technologies available in each zone
+set ev_tech_in_zones :=
+[evtech];
 
 #Retrieve fuel costs for defined technologies
 load "opencem.ckvu5hxg6w5z.ap-southeast-1.rds.amazonaws.com" database=opencem_input
@@ -237,5 +247,73 @@ AND MINUTE(timestamp)=0
 AND demand_scenario_id =3) roof
 ON poe.timestamp = roof.timestamp AND poe.region_id = roof.region_id
 AND poe.demand_scenario_id =3
-AND poe.region_id in (SELECT id FROM region WHERE text_id in ('NSW','SA','QLD','VIC','TAS'))
+AND poe.region_id in ([regions])
 order BY regions,t;": [regions,t] region_net_demand;
+# KP modified AND poe.region_id in ([regions]) from AND poe.region_id in (SELECT id FROM region WHERE text_id in ('NSW','SA','QLD','VIC','TAS'))
+
+###############################################################################
+###### READING IN EV TRACES
+###############################################################################
+
+#KP_MODIFIED_180820 - READ IN THE PROPORTION OF vehicles CONNECTED AT T
+load '127.0.0.1' database=em_kp_2020
+user=root password="mEow!5678!" using=pymysql
+query="
+SELECT t1.zone_id AS zones, t1.technology_type_id AS all_tech, cast(t1.timestamp AS CHAR) AS t, avg(t1.proportion_connected) AS ev_connected, t1.scenario_id, t1.profile_id
+FROM connected t1
+INNER JOIN (SELECT technology_type_id, zone_id, profile_id, scenario_id, timestamp
+              FROM connected
+              WHERE timestamp [timerange]
+                  AND MINUTE(timestamp)=0
+                  AND (zone_id, technology_type_id) IN [evtechdb]
+              GROUP BY zone_id, technology_type_id, timestamp) as t2
+        ON t1.zone_id = t2.zone_id
+            AND t1.technology_type_id = t2.technology_type_id
+            AND t1.timestamp = t2.timestamp
+            AND t2.profile_id = 1 AND t2.scenario_id = 1
+GROUP BY t1.zone_id, t1.technology_type_id, t1.timestamp;" : [zones,all_tech,t] ev_connected;
+# KP_MODIFIED_310820 - replaced [evtechdb] with [evtechlist]. Added t1.scenario_id, t1.profile_id to the first select line. Added fields to the inner join select line (previously just had timestamp)
+#KP_MODIFIED_030920 to include zones again -> updated database after struggling to make a non-zone specific option work. proportion_connected
+
+
+#KP_MODIFIED_180820 - READ IN THE CHARGING TRACE
+load '127.0.0.1' database=em_kp_2020
+user=root password="mEow!5678!" using=pymysql
+query="
+SELECT t1.zone_id AS zones, t1.technology_type_id AS all_tech, cast(t1.timestamp AS CHAR) AS t, avg(t1.kw) AS ev_charge_dumb_trace, t1.scenario_id, t1.profile_id
+FROM charging t1
+INNER JOIN (SELECT technology_type_id, zone_id, timestamp, profile_id, scenario_id
+            FROM charging
+            WHERE timestamp [timerange]
+                AND MINUTE(timestamp)=0
+                AND (zone_id, technology_type_id) IN [evtechdb]
+            GROUP BY zone_id, technology_type_id, timestamp) as t2
+    on t1.zone_id = t2.zone_id
+       AND t1.technology_type_id = t2.technology_type_id
+       AND t1.timestamp = t2.timestamp
+       AND t1.profile_id = 1
+       AND t1.scenario_id = 1
+GROUP BY t1.zone_id, t1.technology_type_id, t1.timestamp;" : [zones,all_tech,t] ev_charge_dumb_trace;
+# KP_MODIFIED_310820 - replaced [evtechdb] with [evtechlist]. Added t1.scenario_id, t1.profile_id to the first select line. Added fields to the inner join select line (previously just had timestamp)
+#KP_MODIFIED_030920 to include zones again -> updated database after struggling to make a non-zone specific option work.
+
+#KP_MODIFIED_180820 - READ IN THE TRANSPORT TRACE
+load '127.0.0.1' database=em_kp_2020
+user=root password="mEow!5678!" using=pymysql
+query="
+SELECT t1.zone_id AS zones, t1.technology_type_id AS all_tech, cast(t1.timestamp AS CHAR) AS t, avg(t1.kw) AS ev_trans_trace, t1.scenario_id, t1.profile_id
+FROM transport t1
+INNER JOIN (SELECT technology_type_id, zone_id, timestamp, profile_id, scenario_id
+            FROM transport
+            WHERE timestamp [timerange]
+                AND MINUTE(timestamp)=0
+                AND (zone_id, technology_type_id) IN [evtechdb]
+            GROUP BY zone_id, technology_type_id, timestamp) as t2
+    on t1.zone_id = t2.zone_id
+       AND t1.technology_type_id = t2.technology_type_id
+       AND t1.timestamp = t2.timestamp
+       AND t1.profile_id = 1
+       AND t1.scenario_id = 1
+GROUP BY t1.zone_id, t1.technology_type_id, t1.timestamp;" : [zones,all_tech,t] ev_trans_trace;
+# KP_MODIFIED_310820 - replaced [evtechdb] with [evtechlist]. Added t1.scenario_id, t1.profile_id to the first select line. Added fields to the inner join select line (previously just had timestamp)
+#KP_MODIFIED_030920 to include zones again -> updated database after struggling to make a non-zone specific option work.

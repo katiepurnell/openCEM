@@ -15,6 +15,7 @@ import json
 import linecache
 
 from pyomo.environ import value
+from cemo import const
 
 from cemo.rules import (cost_build_per_zone_model,
                         cost_build_per_zone_exo, system_cost,
@@ -43,6 +44,8 @@ def jsonify(inst, year):
                 list(inst.nobuild_gen_tech),
                 inst.hyb_tech.name:
                 list(inst.hyb_tech),
+                inst.ev_tech.name:
+                list(inst.ev_tech),
                 inst.stor_tech.name:
                 list(inst.stor_tech),
                 inst.t.name:
@@ -59,6 +62,8 @@ def jsonify(inst, year):
                 list(inst.commit_gen_tech_in_zones),
                 inst.hyb_tech_in_zones.name:
                 list(inst.hyb_tech_in_zones),
+                inst.ev_tech_in_zones.name:
+                list(inst.ev_tech_in_zones),
                 inst.stor_tech_in_zones.name:
                 list(inst.stor_tech_in_zones),
                 inst.intercons_in_zones.name:
@@ -76,6 +81,8 @@ def jsonify(inst, year):
                 fill_complex_set(inst.commit_gen_tech_per_zone),
                 inst.hyb_tech_per_zone.name:
                 fill_complex_set(inst.hyb_tech_per_zone),
+                inst.ev_tech_per_zone.name:
+                fill_complex_set(inst.ev_tech_per_zone),
                 inst.stor_tech_per_zone.name:
                 fill_complex_set(inst.stor_tech_per_zone),
                 inst.intercon_per_zone.name:
@@ -89,6 +96,8 @@ def jsonify(inst, year):
                 fill_complex_param(inst.cost_stor_build),
                 inst.cost_hyb_build.name:
                 fill_complex_param(inst.cost_hyb_build),
+                inst.cost_ev_build.name:
+                fill_complex_param(inst.cost_ev_build),
                 inst.cost_intercon_build.name:
                 fill_complex_param(inst.cost_intercon_build),
                 inst.cost_fuel.name:
@@ -109,6 +118,8 @@ def jsonify(inst, year):
                 fill_complex_param(inst.stor_cap_initial),
                 inst.hyb_cap_initial.name:
                 fill_complex_param(inst.hyb_cap_initial),
+                inst.ev_cap_initial.name:
+                fill_complex_param(inst.ev_cap_initial),
                 inst.intercon_cap_initial.name:
                 fill_complex_param(inst.intercon_cap_initial),
                 inst.gen_cap_exo.name:
@@ -117,6 +128,8 @@ def jsonify(inst, year):
                 fill_complex_param(inst.stor_cap_exo),
                 inst.hyb_cap_exo.name:
                 fill_complex_param(inst.hyb_cap_exo),
+                inst.ev_cap_exo.name:
+                fill_complex_param(inst.ev_cap_exo),
                 inst.intercon_cap_exo.name:
                 fill_complex_param(inst.intercon_cap_exo),
                 inst.ret_gen_cap_exo.name:
@@ -137,6 +150,10 @@ def jsonify(inst, year):
                 fill_scalar_key_param(inst.cost_hyb_fom),
                 inst.cost_hyb_vom.name:
                 fill_scalar_key_param(inst.cost_hyb_vom),
+                inst.cost_ev_fom.name:
+                fill_scalar_key_param(inst.cost_ev_fom),
+                inst.cost_ev_vom.name:
+                fill_scalar_key_param(inst.cost_ev_vom),
                 inst.all_tech_lifetime.name:
                 fill_scalar_key_param(inst.all_tech_lifetime),
                 inst.fixed_charge_rate.name:
@@ -151,6 +168,20 @@ def jsonify(inst, year):
                 fill_scalar_key_param(inst.hyb_col_mult),
                 inst.hyb_charge_hours.name:
                 fill_scalar_key_param(inst.hyb_charge_hours),
+
+                inst.ev_rt_eff.name:
+                fill_scalar_key_param(inst.ev_rt_eff),
+                inst.ev_connected.name:
+                fill_scalar_key_param(inst.ev_connected),
+                inst.ev_max_charge_rate.name:
+                fill_scalar_key_param(inst.ev_max_charge_rate),
+                inst.ev_batt_size.name:
+                fill_scalar_key_param(inst.ev_batt_size),
+                inst.ev_trans_trace.name:
+                fill_scalar_key_param(inst.ev_trans_trace),
+                inst.ev_charge_dumb_trace.name:
+                fill_scalar_key_param(inst.ev_charge_dumb_trace),
+
                 inst.fuel_emit_rate.name:
                 fill_scalar_key_param(inst.fuel_emit_rate),
                 inst.cost_cap_carry_forward.name:
@@ -169,6 +200,11 @@ def jsonify(inst, year):
                 inst.year_correction_factor.value,
                 inst.intercon_fixed_charge_rate.name:
                 inst.intercon_fixed_charge_rate.value,
+
+                inst.percent_v2g_enabled.name:
+                inst.percent_v2g_enabled.value,
+                inst.percent_smart_enabled.name:
+                inst.percent_smart_enabled.value,
             },
             'vars': {
                 inst.gen_cap_new.name:
@@ -183,6 +219,8 @@ def jsonify(inst, year):
                 fill_complex_var(inst.hyb_cap_new),
                 inst.hyb_cap_op.name:
                 fill_complex_var(inst.hyb_cap_op),
+                inst.ev_cap_op.name:
+                fill_complex_var(inst.ev_cap_op),
                 inst.intercon_cap_new.name:
                 fill_complex_var(inst.intercon_cap_new),
                 inst.intercon_cap_op.name:
@@ -203,6 +241,22 @@ def jsonify(inst, year):
                 fill_complex_var(inst.stor_level),
                 inst.hyb_level.name:
                 fill_complex_var(inst.hyb_level),
+                inst.ev_level.name:
+                fill_complex_var(inst.ev_level),
+
+                inst.ev_v2g_disp.name:
+                fill_complex_var(inst.ev_v2g_disp),
+                inst.ev_dumb_charge.name:
+                fill_complex_var(inst.ev_dumb_charge),
+                inst.ev_smart_charge.name:
+                fill_complex_var(inst.ev_smart_charge),
+                inst.ev_disp_transport.name:
+                fill_complex_var(inst.ev_disp_transport),
+                inst.ev_num_vehs.name:
+                fill_complex_var(inst.ev_num_vehs),
+                inst.ev_charge.name:
+                fill_complex_var(inst.ev_charge),
+
                 inst.unserved.name:
                 fill_complex_var(inst.unserved),
                 inst.surplus.name:
@@ -275,6 +329,8 @@ def json_carry_forward_cap(inst):
         fill_complex_var(inst.stor_cap_op),
         inst.hyb_cap_initial.name:
         fill_complex_var(inst.hyb_cap_op),
+        inst.ev_cap_initial.name:
+        fill_complex_var(inst.ev_cap_op),
         inst.intercon_cap_initial.name:
         fill_complex_var(inst.intercon_cap_op),
         inst.cost_cap_carry_forward_sim.name: [{
@@ -297,7 +353,8 @@ def jsonopcap0(inst):
     out = {
         inst.gen_cap_initial.name: fill_complex_mutable_param(inst.gen_cap_initial),
         inst.stor_cap_initial.name: fill_complex_param(inst.stor_cap_initial),
-        inst.hyb_cap_initial.name: fill_complex_param(inst.hyb_cap_initial)
+        inst.hyb_cap_initial.name: fill_complex_param(inst.hyb_cap_initial),
+        inst.ev_cap_initial.name: fill_complex_param(inst.ev_cap_initial)
     }
     return out
 

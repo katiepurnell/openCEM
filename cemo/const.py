@@ -36,7 +36,14 @@ TECH_TYPE = {
     25: 'phes_12h',
     26: 'battery_1h',
     27: 'battery_3h',
-    28: 'coal_sc_new'
+    28: 'coal_sc_new',
+    50: 'private_cars',
+    51: 'light_commercial_vehicles',
+    52: 'taxis',
+    53: 'bicycles',
+    60: 'public buses',
+    61: 'ferries',
+    70: 'road freight',
 }
 
 ZONE = {
@@ -370,6 +377,13 @@ DEFAULT_TECH_LIFETIME = {  # Source GHD 2018 AEMO cost and technical parameter r
     26: 15,
     27: 15,
     28: 50,
+    50: 11,
+    51: 11,
+    52: 11,
+    53: 11,
+    60: 11,
+    61: 11,
+    70: 11,
 
 }
 
@@ -482,6 +496,16 @@ DEFAULT_HYB_PROPS = {
     23: {"col_mult": 3.1, "charge_hours": 12},
 }
 
+DEFAULT_EV_PROPS = {
+    50: {"rt_eff": 0.95, "charge_rate": 0.0072, "default_batt_size": 0.05}, #where batt size is in MWh and charge rate is in MW
+    51: {"rt_eff": 0.95, "charge_rate": 0.022, "default_batt_size": 0.05}, #lcv
+    52: {"rt_eff": 0.95, "charge_rate": 0.022, "default_batt_size": 0.08}, #taxi
+    53: {"rt_eff": 0.95, "charge_rate": 0.0024, "default_batt_size": 0.002}, #bicycle
+    60: {"rt_eff": 0.95, "charge_rate": 0.050, "default_batt_size": 0.3}, #bus
+    61: {"rt_eff": 0.95, "charge_rate": 0.9, "default_batt_size": 0.5}, #ferry
+    70: {"rt_eff": 0.95, "charge_rate": 0.022, "default_batt_size": 0.15}, #freight
+}
+
 DEFAULT_COSTS = {
     "unserved": 980000,
     "trans": 0.02339,  # AEMO 2018-2019 budget
@@ -561,7 +585,7 @@ ALL_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
             12, 13, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 26, 27, 28]
 
 DISPLAY_ORDER = [
-    6, 7, 4, 5, 1, 16, 19, 2, 3, 8, 24, 14, 25, 21, 18, 26, 15, 27, 12, 17, 22, 13, 23, 9, 10, 11, 28]
+    6, 7, 4, 5, 1, 16, 19, 2, 3, 8, 24, 14, 25, 21, 18, 26, 15, 27, 12, 17, 22, 13, 23, 9, 10, 11, 28, 50,51,52,53,60,61,70]
 
 GEN_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17, 18, 19, 20, 28]
 RE_GEN_TECH = [1, 9, 10, 11, 12, 17, 18]
@@ -577,12 +601,17 @@ RETIRE_TECH = [2, 3, 4, 5, 6, 7, 8, 16, 19]
 NOBUILD_TECH = [3, 4, 5, 6, 7, 9, 16, 18, 19, 21]  # 3, 5 and 7 no build due to incomplete data
 SYNC_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 13, 15, 16, 18, 19]
 
+EV_TECH = [50,51,52,53,60,61,70]
+SMART_CHARGE_EV_TECH = [50,51,52,53,60,61,70]  # if included, means the solver will optimise the charging profile for that technology (for the proportion adopted) and read in the dumb charging profile for the rest. Not for freight.
+V2G_EV_TECH = [50,51,52,53,60,61] # if included, means the solver will optimise the v2g discharge for that technology (for the proportion adopted) and set as 0 for the rest. Not for freight.
+
+
 # Variable bounds for numerical solver performance
 # Intended to inform solver of magnitude of varables, not to limit solution values
 # Select smallest value that will not limit solutions
 # Avoid using conservatively large values may negate the effect of speeding up solution
-CAP_BOUNDS = (0, 2.5e4)  # maximum capacity per zone
-DISP_BOUNDS = (0, 2.5e4)  # maximum dispatch per zone
+CAP_BOUNDS = (0, 2.5e5)  # maximum capacity per zone
+DISP_BOUNDS = (0, 2.5e5)  # maximum dispatch per zone
 SCALED_DISP_BOUNDS = (0, 3e1)  # maximum scaled dispatch per zone
 STOR_BOUNDS = (0, 7.5e5)  # maximum storage level per zone
 
@@ -616,4 +645,11 @@ PALETTE = {
     26: (150 / 255, 150 / 255, 150 / 255, 1),  # Light gray other tech 3
     27: (155 / 255, 155 / 255, 155 / 255, 1),  # Light gray other tech 4
     28: (160 / 255, 160 / 255, 160 / 255, 1),  # Light gray other tech 5
+    50: (140 / 255, 140 / 255, 140 / 255, 1),  # ev_private
+    51: (161 / 255, 135 / 255, 111 / 255, 1),  # ev_lcv
+    52: (240 / 255, 79 / 255, 35 / 255, 1),  # ev_taxi
+    53: (0 / 255, 96 / 255, 1, 1),  # ev_bicycle
+    60: (1, 209 / 255, 26 / 255, 1),  # ev_bus
+    61: (137 / 255, 174 / 255, 207 / 255, 1),  # ev_ferry
+    70: (43 / 255, 161 / 255, 250 / 255, 1),  # ev_freight
 }

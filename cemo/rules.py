@@ -46,6 +46,10 @@ def ScanForHybridperZone(model):
     for (i, j) in model.hyb_tech_in_zones:
         model.hyb_tech_per_zone[i].add(j)
 
+def ScanForEVperZone(model):
+    '''generate ev generator zone sets from tuple based sets'''
+    for (i, j) in model.ev_tech_in_zones:
+        model.ev_tech_per_zone[i].add(j)
 
 def ScanForZoneperRegion(model):
     '''Generate tuples of zones in regions based on default or configured data'''
@@ -92,6 +96,10 @@ def dispatch(model, r):
         + sum(1e3*model.hyb_disp[z, h, t]
               for z in model.zones_per_region[r]
               for h in model.hyb_tech_per_zone[z]
+              for t in model.t)\
+        + sum(model.ev_v2g_disp[z, e, t] #KP_MODIFIED_310820 from ev_disp to ev_v2g_disp
+              for z in model.zones_per_region[r]
+              for e in model.ev_tech_per_zone[z]
               for t in model.t)
 
 
@@ -182,6 +190,10 @@ def con_operating_reserve(model, region, time):
         + sum(model.hyb_reserve[zone, hyb_tech, time]
               for zone in model.zones_per_region[region]
               for hyb_tech in model.hyb_tech_per_zone[zone]
+              )\
+        + sum(model.ev_reserve[zone, ev_tech, time]
+              for zone in model.zones_per_region[region]
+              for ev_tech in model.ev_tech_per_zone[zone]
               )\
         >= model.nem_disp_ratio * model.region_net_demand[region, time]
 
@@ -367,10 +379,84 @@ def con_maxchargehy(model, z, h, t):
         <= model.hyb_cap_op[z, h] * model.hyb_charge_hours[h]
 
 
+######################## EV Rules: KP_MODIFIED_180820 ######################
+# RULE 1: Battery energy level at t
+def con_evcharge(model, z, e, t):
+    '''EV charge dynamic'''
+    # print("con_evcharge: --- z: {}, e: {}, t: {}, v2g disp: {}, transport: {}, charge (total): {}, ev_level prev: {}".format(z, e, t, model.ev_v2g_disp[z, e, t], model.ev_disp_transport[z, e, t], model.ev_charge[z, e, t], model.ev_level[z, e, model.t.prevw(t)]))
+
+    return model.ev_level[z, e, t] \
+        == model.ev_level[z, e, model.t.prevw(t)] \
+        - (model.ev_v2g_disp[z, e, t] / model.ev_rt_eff[e]) \
+        - model.ev_disp_transport[z, e, t]\
+        + (model.ev_charge[z, e, t] * model.ev_rt_eff[e]) #KP_MODIFIED_010920 added efficiency here - v2g below is max and doesn't include eff. More power will be taken from the battery to get the same output due to eff. so divided by (made bigger here). For charging - only a proportion of the charge will be delivered to the battery, so multiplied (smaller).
+
+# RULE 2: Maximum storage level less than total installed capacity
+def con_maxchargeev(model, z, e, t): # KP_MODIFIED 170920 such that the ev_level can't go below 20% of max batt cap either
+    '''EV storage cannot charge beyond its maximum charge capacity'''
+    return 0.2 * model.ev_cap_op[z, e] <= model.ev_level[z, e, t] <= model.ev_cap_op[z, e] #KP_MODIFIED_010920 to remove the 1e-3 and keep in mw
+        # <= 1e-3*model.ev_cap_op[z, e] #N.B. following suit for 1e3 from jose. wasn't in my intial. ev cap op in mw. so this is in gw?
+
+# RULE 3: Energy balance
+def con_ev_flow_lim(model, zone, ev_tech, time):
+    '''EV storage charge/discharge flow is limited by plant capacity.'''
+    return model.ev_charge[zone, ev_tech, time] + model.ev_v2g_disp[zone, ev_tech, time] + model.ev_disp_transport[zone, ev_tech, time] + model.ev_reserve[zone, ev_tech, time] <= model.ev_cap_op[zone, ev_tech] #N.B. following suit for 1e3 from jose. wasn't in my intial
+    #KP_MODIFIED_010920 to remove the 1e-3 and keep in mw
+
+# RULE 4: Battery reserve to be less than charge level
+def con_ev_reserve_lim(model, zone, ev_tech, time):
+    '''limit ev reserves to be within storage charge. '''
+    return model.ev_reserve[zone, ev_tech, time] <= model.ev_level[zone, ev_tech, time]
+
+# RULE 5: Read in the transport energy requirement trace
+def con_ev_trans_disp(model, z, e, t): # in MWh, hourly basis
+    return model.ev_disp_transport[z, e, t] == model.ev_trans_trace[z,e, t]/1000  * model.ev_num_vehs[z, e]# / model.ev_rt_eff[e] #KP_MODIFIED_180820_2 #KP_MODIFIED_010920 to remove efficiency as already included in the traces program
+
+# RULE 6: Calculate EV capacity
+def con_ev_cap(model, z, e):
+    '''Calculate EV capacity as the net of model and exogenous decisions'''
+    return model.ev_cap_op[z, e] == model.ev_cap_initial[z, e] + model.ev_cap_exo[z, e]
+
+# RULE 7: Set V2G level to 0 if V2G is off - absolute limit of v2g (max discharge rate * num veh * prop connected * prop willing to participate) -> efficiency ISN'T included here because this is the maximum the grid can provide. Need to include in the load balance for the battery.
+def con_ev_v2g(model, z, e, t):
+    if e in model.v2g_tech:
+        return model.ev_v2g_disp[z, e, t] <= model.ev_connected[z,e, t] * model.ev_num_vehs[z,e] * model.ev_max_charge_rate[e] * model.percent_v2g_enabled #KP_MODIFIED_180820_2 / model.ev_rt_eff[e]
+    else:
+        return model.ev_v2g_disp[z, e, t] == 0
+
+# RULE 9: Set dumb charging profile
+def con_ev_dumb_charge(model, z, e, t): # in MWh, hourly basis #KP_MODIFIED_070920 to be in GWh and see if that works
+    if e in model.smart_charge_tech:
+        return model.ev_dumb_charge[z, e, t] == model.ev_charge_dumb_trace[z,e, t]/1000 * model.ev_num_vehs[z, e] * (1-model.percent_smart_enabled)# / model.ev_rt_eff[e] #KP_MODIFIED_010920 to remove efficiency from dumb charging trace as its already included in the external program
+        #KP_MODIFIED_180820_2 changed from model.ev_charge_dumb_trace[z, e, t] * model.ev_num_vehs[z, e] and created below rule to convert
+    else: #KP_MODIFIED_010920 to include no smart charging for freight
+        return model.ev_dumb_charge[z, e, t] == model.ev_charge_dumb_trace[z,e, t]/1000 * model.ev_num_vehs[z, e]# * (1-model.percent_smart_enabled)# / model.ev_rt_eff[e] #KP_MODIFIED_010920 to remove efficiency from dumb charging trace as its already included in the external program
+        #KP_MODIFIED_180820_2 changed from model.ev_charge_dumb_trace[z, e, t] * model.ev_num_vehs[z, e] and created below rule to convert
+
+# RULE 10: Set smart charging profile - absolute limit of smart charging (max charge rate * num veh * prop connected * prop willing to participate) -> efficiency ISN'T included here because this is the maximum the grid can provide. Need to include in the load balance for the battery.
+def con_ev_smart_charge(model,z,e,t):
+    if e in model.smart_charge_tech:
+        return model.ev_smart_charge[z,e,t] <= model.ev_num_vehs[z,e] * model.ev_connected[z,e, t] * model.ev_max_charge_rate[e] * model.percent_smart_enabled # / model.ev_rt_eff[e]
+    else: #KP_MODIFIED_010920 to include no smart charging for freight
+        return model.ev_smart_charge[z,e,t] == 0
+
+
+# RULE 11: Number of vehicles
+def con_ev_num_vehicles(model,z,e): #KP_MODIFIED_010920 removed t for this rule
+    return model.ev_num_vehs[z,e] == model.ev_cap_op[z, e] / model.ev_batt_size[e]
+
+# RULE 8: Set charging level to trace if dumb charging, and limit to amount of vehicles connected and the charge rate otherwise
+def con_ev_level_max(model, z, e, t): #From the perspective of the grid - total dumb charging (already includes losses) and total smart - from grids perspective not cars.
+    return model.ev_charge[z, e, t] == model.ev_dumb_charge[z, e, t] + model.ev_smart_charge[z,e,t]
+
+#########################################################################
+
 def con_ldbal(model, z, t):
     """Provides a rule defining a load balance constraint for the model"""
     return sum(1e3*model.gen_disp[z, n, t] for n in model.gen_tech_per_zone[z])\
         + sum(1e3*model.hyb_disp[z, h, t] for h in model.hyb_tech_per_zone[z])\
+        + sum(model.ev_disp_transport[z, e, t] for e in model.ev_tech_per_zone[z])\
+        + sum(model.ev_v2g_disp[z, e, t] for e in model.ev_tech_per_zone[z])\
         + sum(1e3*model.stor_disp[z, s, t] for s in model.stor_tech_per_zone[z])\
         + sum(1e3*model.intercon_disp[p, z, t] for p in model.intercon_per_zone[z])\
         + model.unserved[z, t]\
@@ -378,6 +464,7 @@ def con_ldbal(model, z, t):
         + sum((1.0 + model.intercon_loss_factor[z, p]) * 1e3*model.intercon_disp[z, p, t]
               for p in model.intercon_per_zone[z])\
         + sum(model.stor_charge[z, s, t] for s in model.stor_tech_per_zone[z])\
+        + sum(model.ev_charge[z, e, t] for e in model.ev_tech_per_zone[z])\
         + model.surplus[z, t]
 
 
@@ -609,6 +696,9 @@ def cost_fixed(model):
         + sum(model.cost_stor_fom[s] * model.stor_cap_op[z, s]
               for z in model.zones
               for s in model.stor_tech_per_zone[z])\
+        + sum(model.cost_ev_fom[e] * model.ev_cap_op[z, e]
+              for z in model.zones
+              for e in model.ev_tech_per_zone[z])\
         + sum(model.cost_hyb_fom[h] * model.hyb_cap_op[z, h]
               for z in model.zones
               for h in model.hyb_tech_per_zone[z])
@@ -654,6 +744,9 @@ def cost_operating(model):
         + sum(model.cost_hyb_vom[h] * 1e3*model.hyb_disp[z, h, t]
               for z in model.zones
               for h in model.hyb_tech_per_zone[z] for t in model.t)
+        + sum(model.cost_ev_vom[e] * 1e3*model.ev_v2g_disp[z, e, t]
+              for z in model.zones
+              for e in model.ev_tech_per_zone[z] for t in model.t)
         )
 
 

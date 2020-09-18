@@ -18,12 +18,14 @@ from cemo.initialisers import (init_cap_factor, init_cost_retire,
                                init_default_lifetime, init_fcr,
                                init_gen_build_limit, init_hyb_charge_hours,
                                init_hyb_col_mult, init_intercon_build_cost,
+                               init_ev_rt_eff,
+                               init_ev_charge_rate,  init_ev_batt_size, init_ev_trans_trace,
                                init_intercon_cap_initial, init_intercon_fcr,
                                init_intercon_loss_factor,
                                init_intercons_in_zones, init_stor_charge_hours,
                                init_stor_rt_eff, init_year_correction_factor,
                                init_zone_demand_factors, init_zones_in_regions)
-from cemo.rules import (ScanForHybridperZone, ScanForStorageperZone,
+from cemo.rules import (ScanForHybridperZone, ScanForEVperZone, ScanForStorageperZone,
                         ScanForTechperZone, ScanForZoneperRegion,
                         build_intercon_per_zone, build_carry_fwd_cost_per_zone,
                         build_adjust_exo_cap, build_adjust_exo_ret, build_cap_factor_thres,
@@ -31,6 +33,8 @@ from cemo.rules import (ScanForHybridperZone, ScanForStorageperZone,
                         con_committed_cap, con_disp_ramp_down, con_disp_ramp_up, con_emissions,
                         con_gen_cap, con_hyb_cap, con_hyb_flow_lim,
                         con_hyb_level_max, con_hyb_reserve_lim, con_hybcharge,
+                        con_ev_cap, con_evcharge, con_maxchargeev, con_ev_flow_lim, con_ev_trans_disp,
+                        con_ev_reserve_lim, con_ev_v2g, con_ev_level_max, con_ev_num_vehicles,
                         con_intercon_cap, con_ldbal, con_max_mhw_per_zone,
                         con_max_mwh_nem_wide, con_max_trans, con_maxcap,
                         con_maxcharge, con_maxchargehy, con_min_load_commit,
@@ -40,7 +44,7 @@ from cemo.rules import (ScanForHybridperZone, ScanForStorageperZone,
                         con_stor_cap,
                         con_stor_flow_lim, con_stor_reserve_lim,
                         con_storcharge, con_uns, con_uptime_commitment,
-                        obj_cost)
+                        obj_cost, con_ev_dumb_charge, con_ev_smart_charge)
 
 
 def model_options(**kwargs):
@@ -51,6 +55,8 @@ def model_options(**kwargs):
               'nem_ret_gwh': False,
               'region_ret_ratio': False,
               'nem_disp_ratio': True,
+              'v2g_enabled': False, #KP_MODIFIED_180820 - this is what I had in the old file but shouldn't this be true??
+              'smart_enabled': False, #KP_MODIFIED_180820 - this is what I had in the old file but shouldnt this be true??
               'nem_re_disp_ratio': False,
               'build_intercon_manual': False}
     opt = namedtuple('model_options', [i for i in FIELDS])
@@ -88,6 +94,8 @@ class CreateModel():
             initialize=cemo.const.STOR_TECH) & self.m.all_tech
         # set of hybrid (gen+storage) technologies
         self.m.hyb_tech = Set(initialize=cemo.const.HYB_TECH) & self.m.all_tech
+        self.m.ev_tech = Set(initialize=cemo.const.EV_TECH) & self.m.all_tech
+
         # Set of dispatch intervals
         self.m.t = Set(ordered=True)
 
@@ -110,6 +118,8 @@ class CreateModel():
         self.m.re_disp_gen_tech_in_zones = Set(dimen=2)
         # Set listing storage avaialable per zone (like a sparsity pattern)
         self.m.hyb_tech_in_zones = Set(dimen=2)
+        # Set listing ev avaialable per zone (like a sparsity pattern) #KP_ADDED
+        self.m.ev_tech_in_zones = Set(dimen=2)
         # Set listing storage avaialable per zone (like a sparsity pattern)
         self.m.stor_tech_in_zones = Set(dimen=2)
         # Set listing transmission lines to other regions in each region
@@ -144,14 +154,24 @@ class CreateModel():
         # Returns a tuple with emitting techs in each zone
         self.m.hyb_tech_per_zone = Set(
             self.m.zones, within=self.m.all_tech, initialize=[])
+        # Returns a tuple with emitting techs in each zone
+        self.m.ev_tech_per_zone = Set(
+            self.m.zones, within=self.m.all_tech, initialize=[])
         # returns a tuple with transmission links in each region
         self.m.intercon_per_zone = Set(self.m.zones, initialize=[])
+
+        self.m.smart_charge_tech = Set(initialize=cemo.const.SMART_CHARGE_EV_TECH) & self.m.all_tech
+        # set of ev tech WITHOUT V2G enabled
+        self.m.v2g_tech = Set(initialize=cemo.const.V2G_EV_TECH) & self.m.all_tech
+
 
         # @@ Build actions
         # Scan TechinZones and populate ?_gen_tech_per_zone
         self.m.TpZ_build = BuildAction(rule=ScanForTechperZone)
         # Scan HybTechinZones and populate hyb_tech_per_zone
         self.m.HpZ_build = BuildAction(rule=ScanForHybridperZone)
+        # Scan EVTechinZones and populate ev_tech_per_zone
+        self.m.EpZ_build = BuildAction(rule=ScanForEVperZone)
         # Scan ZinR and populate ZperR
         self.m.ZpR_build = BuildAction(rule=ScanForZoneperRegion)
         # Scan TransLines and populate intercon_per_zone
@@ -169,6 +189,8 @@ class CreateModel():
             self.m.stor_tech_in_zones)  # Capital costs storage
         self.m.cost_hyb_build = Param(
             self.m.hyb_tech_in_zones)  # Capital costs hybrid
+        self.m.cost_ev_build = Param(
+            self.m.ev_tech_in_zones) #,  initialize=init_default_capex)
         # Capital costs $/MW/km trans
         self.m.cost_intercon_build = Param(
             self.m.intercons_in_zones, initialize=init_intercon_build_cost)
@@ -189,11 +211,21 @@ class CreateModel():
         self.m.cost_hyb_fom = Param(self.m.hyb_tech)
         # Variable operating costs hybrid
         self.m.cost_hyb_vom = Param(self.m.hyb_tech)
+
+        # Fixed operating costs ev
+        self.m.cost_ev_fom = Param(self.m.ev_tech)
+        # Variable operating costs ev
+        self.m.cost_ev_vom = Param(self.m.ev_tech)
+
         # Technology lifetime in years
         self.m.all_tech_lifetime = Param(
             self.m.all_tech, initialize=init_default_lifetime)
         # Project discount rate
         self.m.all_tech_discount_rate = Param(default=0.05)
+        # % Fleet V2G EV Discharging enabled
+        self.m.percent_v2g_enabled = Param(default=0)
+        # % Fleet Smart EV Charging enabled
+        self.m.percent_smart_enabled = Param(default=0.5)
 
         # Generator tech fixed charge rate
         self.m.fixed_charge_rate = Param(self.m.all_tech, initialize=init_fcr)
@@ -220,6 +252,17 @@ class CreateModel():
         self.m.stor_charge_hours = Param(
             self.m.stor_tech, initialize=init_stor_charge_hours)
 
+        # Round trip efficiency of ev technology
+        self.m.ev_rt_eff = Param(self.m.ev_tech, initialize=init_ev_rt_eff)
+        self.m.ev_connected =  Param(self.m.ev_tech_in_zones, self.m.t, default=0) #KP_MODIFIED_180820_2 from  ev_tech_in_zones #KP_MODIFIED_030920 changed back to ev_tech_in_zones from ev_tech
+        # Max charge rate & v2g discharge rate
+        self.m.ev_max_charge_rate = Param(self.m.ev_tech, initialize=init_ev_charge_rate)
+        # Battery size per vehicle
+        self.m.ev_batt_size = Param(self.m.ev_tech, initialize=init_ev_batt_size)
+        self.m.ev_trans_trace = Param(self.m.ev_tech_in_zones, self.m.t, default=0)  # Trnasport energy trace read in #KP_MODIFIED_180820_2 from self.m.ev_tech_in_zones  #KP_MODIFIED_030920 changed back to ev_tech_in_zones from ev_tech
+        self.m.ev_charge_dumb_trace = Param(self.m.ev_tech_in_zones,  self.m.t, default=0)
+
+
         # Collector multiple of hybrid technology
         self.m.hyb_col_mult = Param(
             self.m.hyb_tech, initialize=init_hyb_col_mult)
@@ -242,6 +285,9 @@ class CreateModel():
         self.m.hyb_cap_factor = Param(
             self.m.hyb_tech_in_zones, self.m.t,
             initialize=init_cap_factor, mutable=True)  # Capacity factors for generators
+        self.m.ev_cap_factor = Param(
+            self.m.ev_tech_in_zones, self.m.t,
+            initialize=init_cap_factor, mutable=True)
         # Revise cap factors for numbers below threshold of 1e-5
         self.m.build_cap_factor_thres = BuildAction(rule=build_cap_factor_thres)
 
@@ -254,6 +300,8 @@ class CreateModel():
             self.m.stor_tech_in_zones, default=0)  # operating capacity
         self.m.hyb_cap_initial = Param(
             self.m.hyb_tech_in_zones, default=0)  # operating capacity
+        self.m.ev_cap_initial = Param(
+            self.m.ev_tech_in_zones, default=0)
         self.m.intercon_cap_initial = Param(
             self.m.intercons_in_zones, initialize=init_intercon_cap_initial)  # operating capacity
         # exogenous new capacity
@@ -262,6 +310,8 @@ class CreateModel():
         self.m.stor_cap_exo = Param(self.m.stor_tech_in_zones, default=0)
         # exogenous new hybrid capacity
         self.m.hyb_cap_exo = Param(self.m.hyb_tech_in_zones, default=0)
+        self.m.ev_cap_exo = Param(self.m.ev_tech_in_zones, default=0)
+
         # exogenous transmission capacity
         self.m.intercon_cap_exo = Param(self.m.intercons_in_zones, default=0)
         self.m.ret_gen_cap_exo = Param(
@@ -318,6 +368,7 @@ class CreateModel():
             self.m.hyb_tech_in_zones, within=NonNegativeReals, bounds=cemo.const.CAP_BOUNDS)
         self.m.hyb_cap_op = Var(self.m.hyb_tech_in_zones,
                                 within=NonNegativeReals, bounds=cemo.const.CAP_BOUNDS)
+        self.m.ev_cap_op = Var(self.m.ev_tech_in_zones, within=NonNegativeReals)
 
         intercon_bounds = cemo.const.CAP_BOUNDS
         if self.model_options.build_intercon_manual:
@@ -326,69 +377,79 @@ class CreateModel():
         self.m.intercon_cap_new = Var(
             self.m.intercons_in_zones, within=NonNegativeReals, bounds=intercon_bounds)
         self.m.intercon_cap_op = Var(
-            self.m.intercons_in_zones, within=NonNegativeReals, bounds=cemo.const.CAP_BOUNDS)
+            self.m.intercons_in_zones, within=NonNegativeReals) #, bounds=cemo.const.CAP_BOUNDS)
         self.m.gen_cap_ret = Var(
             self.m.retire_gen_tech_in_zones,
-            within=NonNegativeReals, bounds=cemo.const.CAP_BOUNDS)  # retireable capacity
+            within=NonNegativeReals) #, bounds=cemo.const.CAP_BOUNDS)  # retireable capacity
         # dispatched power
         self.m.gen_disp = Var(
             self.m.gen_tech_in_zones,
-            self.m.t, within=NonNegativeReals, bounds=cemo.const.SCALED_DISP_BOUNDS)
+            self.m.t, within=NonNegativeReals) #, bounds=cemo.const.SCALED_DISP_BOUNDS)
         # Variables for committed power constraints
         self.m.gen_disp_com = Var(
             self.m.commit_gen_tech_in_zones,
-            self.m.t, within=NonNegativeReals, bounds=cemo.const.SCALED_DISP_BOUNDS)
+            self.m.t, within=NonNegativeReals) #, bounds=cemo.const.SCALED_DISP_BOUNDS)
         self.m.gen_disp_com_p = Var(
             self.m.commit_gen_tech_in_zones,
-            self.m.t, within=NonNegativeReals, bounds=cemo.const.SCALED_DISP_BOUNDS)
+            self.m.t, within=NonNegativeReals) #, bounds=cemo.const.SCALED_DISP_BOUNDS)
         self.m.gen_disp_com_m = Var(
             self.m.commit_gen_tech_in_zones,
-            self.m.t, within=NonNegativeReals, bounds=cemo.const.SCALED_DISP_BOUNDS)
+            self.m.t, within=NonNegativeReals) #, bounds=cemo.const.SCALED_DISP_BOUNDS)
         self.m.gen_disp_com_s = Var(
             self.m.commit_gen_tech_in_zones,
-            self.m.t, within=NonNegativeReals, bounds=cemo.const.SCALED_DISP_BOUNDS)
+            self.m.t, within=NonNegativeReals) #, bounds=cemo.const.SCALED_DISP_BOUNDS)
 
         self.m.stor_disp = Var(
             self.m.stor_tech_in_zones, self.m.t,
-            within=NonNegativeReals, bounds=cemo.const.SCALED_DISP_BOUNDS)  # dispatch from storage
+            within=NonNegativeReals) #, bounds=cemo.const.SCALED_DISP_BOUNDS)  # dispatch from storage
         self.m.stor_reserve = Var(
             self.m.stor_tech_in_zones, self.m.t,
-            within=NonNegativeReals, bounds=cemo.const.DISP_BOUNDS)  # dispatched power from storage
+            within=NonNegativeReals) #, bounds=cemo.const.DISP_BOUNDS)  # dispatched power from storage
         self.m.stor_charge = Var(
             self.m.stor_tech_in_zones, self.m.t,
-            within=NonNegativeReals, bounds=cemo.const.DISP_BOUNDS)  # power to charge storage
+            within=NonNegativeReals) #, bounds=cemo.const.DISP_BOUNDS)  # power to charge storage
 
         self.m.hyb_disp = Var(
             self.m.hyb_tech_in_zones, self.m.t,
-            within=NonNegativeReals, bounds=cemo.const.SCALED_DISP_BOUNDS)  # dispatch from hybrid
+            within=NonNegativeReals) #, bounds=cemo.const.SCALED_DISP_BOUNDS)  # dispatch from hybrid
 
         self.m.hyb_reserve = Var(
             self.m.hyb_tech_in_zones, self.m.t,
-            within=NonNegativeReals, bounds=cemo.const.DISP_BOUNDS)  # reserve capacity for hybrids
+            within=NonNegativeReals) #, bounds=cemo.const.DISP_BOUNDS)  # reserve capacity for hybrids
 
         self.m.hyb_charge = Var(
             self.m.hyb_tech_in_zones, self.m.t,
-            within=NonNegativeReals, bounds=cemo.const.DISP_BOUNDS)  # charging power from hybrid
+            within=NonNegativeReals) #, bounds=cemo.const.DISP_BOUNDS)  # charging power from hybrid
 
         self.m.stor_level = Var(
             self.m.stor_tech_in_zones, self.m.t,
-            within=NonNegativeReals, bounds=cemo.const.STOR_BOUNDS)  # Charge level for storage
+            within=NonNegativeReals) #, bounds=cemo.const.STOR_BOUNDS)  # Charge level for storage
 
         self.m.hyb_level = Var(
             self.m.hyb_tech_in_zones, self.m.t,
-            within=NonNegativeReals, bounds=cemo.const.STOR_BOUNDS)  # Charge level for storage
+            within=NonNegativeReals) #, bounds=cemo.const.STOR_BOUNDS)  # Charge level for storage
+
+        self.m.ev_reserve = Var(self.m.ev_tech_in_zones, self.m.t, within=NonNegativeReals)  # reserve capacity for ev  #KP_ADDED
+        self.m.ev_level = Var(self.m.ev_tech_in_zones, self.m.t, within=NonNegativeReals)  # Charge level for ev
+        self.m.ev_charge = Var(self.m.ev_tech_in_zones, self.m.t, within=NonNegativeReals)  # charging power from ev  #KP_ADDED
+        self.m.ev_v2g_disp = Var(self.m.ev_tech_in_zones, self.m.t, within=NonNegativeReals)  # dispatched power from ev via V2G #KP_ADDED
+        self.m.ev_disp_transport = Var(self.m.ev_tech_in_zones, self.m.t, within=NonNegativeReals) # dispatched power from ev from transport
+        self.m.ev_dumb_charge = Var(self.m.ev_tech_in_zones,  self.m.t, within=NonNegativeReals) #KP_MODIFIED
+        self.m.ev_smart_charge = Var(self.m.ev_tech_in_zones,  self.m.t, within=NonNegativeReals) #KP_MODIFIED
+        self.m.ev_num_vehs = Var(self.m.ev_tech_in_zones, within=NonNegativeReals) #number of installed vehicles
+
+
 
         # Numerical relaxation to load balance and capacity decisions
         self.m.unserved = Var(self.m.zones, self.m.t,
-                              within=NonNegativeReals, bounds=cemo.const.DISP_BOUNDS)
+                              within=NonNegativeReals) #, bounds=cemo.const.DISP_BOUNDS)
         self.m.surplus = Var(self.m.zones, self.m.t,
-                             within=NonNegativeReals, bounds=cemo.const.DISP_BOUNDS)
+                             within=NonNegativeReals) #, bounds=cemo.const.DISP_BOUNDS)
 
         # Interconnector flow
         self.m.intercon_disp = Var(
             self.m.intercons_in_zones,
-            self.m.t, within=NonNegativeReals,
-            bounds=cemo.const.SCALED_DISP_BOUNDS)
+            self.m.t, within=NonNegativeReals) #,            bounds=cemo.const.SCALED_DISP_BOUNDS)
 
     def create_constraints(self):
         # @@ Constraints
@@ -492,6 +553,32 @@ class CreateModel():
         self.m.con_hyb_cap = Constraint(
             self.m.hyb_tech_in_zones, rule=con_hyb_cap)
 
+        ####################### EV RULES #KP_MODIFIED_180820 ##################
+        # RULE 6 - CALCULATE EV CAPACITY # EVCap in existing period is previous stor_cap_op plus stor_cap_new
+        self.m.con_ev_cap = Constraint(self.m.ev_tech_in_zones, rule=con_ev_cap)
+        # RULE 11 - NUMBER OF VEHICLES INSTALLED
+        self.m.con_ev_num_vehicles = Constraint(self.m.ev_tech_in_zones, rule=con_ev_num_vehicles)
+        # RULE 5 - TRANSPORT
+        self.m.con_ev_trans_disp = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_trans_disp)
+        # RULE 9 - DUMB CHARGING
+        self.m.con_ev_dumb_charge = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_dumb_charge)
+        # RULE 10 - SMART CHARGING
+        self.m.con_ev_smart_charge = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_smart_charge)
+        # RULE 7 - V2G DISPATCHED
+        self.m.con_ev_v2g = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_v2g)
+        #RULE 1 - BATTERY LEVEL # EV charge/discharge dynamic
+        self.m.EVCharDis = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_evcharge)
+        # RULE 8 - CHARGING LEVEL # Total EV charging
+        self.m.con_ev_level_max = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_level_max)
+        # RULE 2 - MAX. STORAGE LEVEL # Maxiumum charge capacity of storage
+        self.m.MaxChargeev = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_maxchargeev)
+        # RULE 3 - ENERGY BALANCE # Maxiumum rate of ev storage charge/discharge
+        self.m.con_ev_flow_lim = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_flow_lim)
+        # RULE 4 - BATTERY RESERVE LIMIT # Limit ev reserve capacity to be within storage level
+        self.m.con_ev_reserve_lim = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_reserve_lim)
+
+
+        ############################################################
     def create_objective(self):
         # @@ Objective
         # Minimise capital, variable and fixed costs of system

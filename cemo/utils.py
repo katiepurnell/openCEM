@@ -45,6 +45,13 @@ def _techsinregion(instance, region):  # pragma: no cover
         techsinregion = techsinregion | instance.hyb_tech_per_zone[z]()
         techsinregion = techsinregion | instance.stor_tech_per_zone[z]()
     return sorted(techsinregion, key=cemo.const.DISPLAY_ORDER.index)
+def _evsinregion(instance, region): #KP_MODIFIED_070920
+    evsinregion = set()
+    # Populate with intersecton of .gen_tech_per_zone set for all zones in region
+    for z in instance.zones_per_region[region]:
+        evsinregion = evsinregion | instance.ev_tech_per_zone[z]() #KP_MODIFIED_180820
+    return sorted(evsinregion, key=cemo.const.DISPLAY_ORDER.index)
+
 def palette(instance, techsinregion):  # pragma: no cover
     '''Return a palette of tech colours for the set of techs in region given'''
     pal = cemo.const.PALETTE
@@ -133,12 +140,12 @@ def save_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
             capftotal[idx.index(s)] += 0.5 * hours
             nperz[idx.index(s)] += 1
 
-        # for e in inst.ev_tech_per_zone[z]:
-        #     techtotal[idx.index(e)] += value(inst.ev_cap_op[z, e])
-        #     disptotal[idx.index(e)] += value(sum(inst.ev_v2g_disp[z, e, t]
-        #                                          for t in inst.t))
-        #     capftotal[idx.index(e)] += 0.5 * hours
-        #     nperz[idx.index(e)] += 1
+        for e in inst.ev_tech_per_zone[z]:
+            techtotal[idx.index(e)] += value(inst.ev_cap_op[z, e])
+            disptotal[idx.index(e)] += value(sum(inst.ev_v2g_disp[z, e, t]
+                                                 for t in inst.t))
+            capftotal[idx.index(e)] += 0.5 * hours
+            nperz[idx.index(e)] += 1
 
         for h in inst.hyb_tech_per_zone[z]:
             techtotal[idx.index(h)] += value(inst.hyb_cap_op[z, h])
@@ -211,6 +218,7 @@ def save_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
     #         for e in inst.ev_tech_per_zone[z]:
     #             df["LCOE Cost" + str(tname[e])] = [locale.currency(value(cemo.rules.cost_lcoe(inst, e)))]
     df.to_csv(results_dir + out  +'/results/' +out+'_results_'+str(yearyear)+'.csv')
+
 def plotcapacity(instance, out,yearyear):  # pragma: no cover
     """ Stacked plot of capacities
      Feel free to improve the efficiency of this code
@@ -272,6 +280,285 @@ def plotcapacity(instance, out,yearyear):  # pragma: no cover
         ax.set_title(rname[r], position=(0.9, 0.9))  # Region names
     # plt.show()
     plt.savefig(results_dir + out  +'/results/' + out  +'_capacity_allgen_'+str(yearyear)+'.png')
+def plotevcapacity(instance,out,yearyear):
+    """ Stacked plot of capacities
+     Feel free to improve the efficiency of this code
+    """
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    # create set of plots that fits all NEM regions
+    fig = plt.figure(figsize=(14, 9))
+    # horizontal axis with timesamps
+    # cycle through NEM regions`
+    for r in instance.regions:
+        # gather load for NEM region from solved model instance
+        # empty set of all technologies in a region
+        evsinregion = _evsinregion(instance, r)
+        # gather technology text_ids in region for plot labels
+        plabels = []
+        for t in evsinregion:
+            plabels.append(tname[t])
+
+        # Empty array of gen_cap_op_r
+        gen_cap_op_r = np.zeros([len(evsinregion)])
+        gen_cap_new_r = np.zeros([len(evsinregion)])
+        # positions of each tech in numpy array
+        pos = dict(zip(list(evsinregion), range(len(evsinregion))))
+        # collect the total dispatch for each technology across Zones in region
+        for z in instance.zones_per_region[r]:
+
+            for e in instance.ev_tech_per_zone[z]: #KP_ADDED
+                gen_cap_op_r[pos[e]] = gen_cap_op_r[pos[e]] + \
+                    np.array([value(instance.ev_cap_op[z, e])])
+
+
+        N = np.arange(len(evsinregion))
+        ExCap_r = gen_cap_op_r - gen_cap_new_r
+        width = 0.35
+        # Plotting instructions
+        colour = palette(instance, evsinregion)
+        if r % 2 == 0:
+            ax = fig.add_subplot(2, 2, r)
+        else:
+            ax = fig.add_subplot(3, 2, r)
+        ax.bar(N, ExCap_r.tolist(), width, color=colour)  # Existing capacity
+        ax.bar(N, gen_cap_new_r, width, bottom=ExCap_r,
+               color=colour, edgecolor='white', hatch='////')  # New Capacity
+        ax.set_xticks(N)
+        ax.set_xticklabels([tname[t] for t in evsinregion])
+        for tick in ax.get_xticklabels():
+            tick.set_rotation(90)
+        ax.set_title(rname[r], position=(0.9, 0.9))  # Region names
+        # plt.legend(handles=[p1, p2], title='title', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='xx-small')
+    # plt.show()
+    plt.savefig(results_dir + out  +'/results/' + out  +'_ev_capacity_'+str(yearyear)+'.png')
+
+def plotevresults_v2g(instance,out,yearyear): #KP_MODIFIED_070920
+    """ Process results to plot.
+     Feel free to improve the efficiency of this code
+    """
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    # Process results to plot.
+    # Feel free to improve the efficiency of this code
+    # create set of plots that fits all NEM regions
+    fig = plt.figure(figsize=(14, 9))
+    # horizontal axis with timesamps
+    ts = np.array([t for t in instance.t], dtype=np.datetime64)
+    # cycle through NEM regions`
+    for r in instance.regions:
+        # Set of all technologies in a region
+        evsinregion = _evsinregion(instance, r)
+        # gather technology text_ids in region for plot labels
+        plabels = []
+        for t in evsinregion:
+            plabels.append(tname[t])
+        q_z_r = np.zeros([len(evsinregion), len(instance.t)])
+        # positions of each tech in numpy array
+        pos = dict(zip(list(evsinregion), range(len(evsinregion))))
+        # collect the total dispatch for each technology across Zones in region
+        for z in instance.zones_per_region[r]:
+            for e in instance.ev_tech_per_zone[z]: #KP_ADDED #KP_QUESTION - should dispatch be included for evs? #KP_TO_DO_LATER
+                q_z_r[pos[e], :] = q_z_r[pos[e], :] + \
+                    np.array([value(instance.ev_v2g_disp[z, e, t])
+                              for t in instance.t])
+
+        # Plotting instructions
+        # pick respective subplot
+        if r % 2 == 0:
+            ax = fig.add_subplot(2, 2, r)
+        else:
+            ax = fig.add_subplot(3, 2, r)
+        palr = palette(instance, evsinregion)
+        ax.stackplot(ts, q_z_r, colors=palr)  # dispatch values
+        # ax.plot(ts, load, color='black')  # Put load on top
+        ax.legend(plabels)  # put labels
+        ax.set_title(rname[r])  # Region names
+
+        fig.autofmt_xdate()
+    # plt.show()
+    plt.savefig(results_dir + out  +'/results/' + out  +'_v2g_'+str(yearyear)+'.png')
+def plotevresults_charge(instance,out,yearyear):
+    """ Process results to plot.
+     Feel free to improve the efficiency of this code
+    """
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    # Process results to plot.
+    # Feel free to improve the efficiency of this code
+    # create set of plots that fits all NEM regions
+    fig = plt.figure(figsize=(14, 9))
+    # horizontal axis with timesamps
+    ts = np.array([t for t in instance.t], dtype=np.datetime64)
+    # cycle through NEM regions`
+    for r in instance.regions:
+        # Set of all technologies in a region
+        evsinregion = _evsinregion(instance, r)
+        # gather technology text_ids in region for plot labels
+        plabels = []
+        for t in evsinregion:
+            plabels.append(tname[t])
+        q_z_r = np.zeros([len(evsinregion), len(instance.t)])
+        # positions of each tech in numpy array
+        pos = dict(zip(list(evsinregion), range(len(evsinregion))))
+        # collect the total dispatch for each technology across Zones in region
+        for z in instance.zones_per_region[r]:
+            for e in instance.ev_tech_per_zone[z]: #KP_ADDED #KP_QUESTION - should dispatch be included for evs? #KP_TO_DO_LATER
+                q_z_r[pos[e], :] = q_z_r[pos[e], :] + \
+                    np.array([value(instance.ev_charge[z, e, t])
+                              for t in instance.t])
+
+        # Plotting instructions
+        # pick respective subplot
+        if r % 2 == 0:
+            ax = fig.add_subplot(2, 2, r)
+        else:
+            ax = fig.add_subplot(3, 2, r)
+        palr = palette(instance, evsinregion)
+        ax.stackplot(ts, q_z_r, colors=palr)  # dispatch values
+        # ax.plot(ts, load, color='black')  # Put load on top
+        ax.legend(plabels)  # put labels
+        ax.set_title(rname[r])  # Region names
+
+        fig.autofmt_xdate()
+    # plt.show()
+    plt.savefig(results_dir + out  +'/results/' + out  +'_charge_total_'+str(yearyear)+'.png')
+def plotevresults_dumb_charge(instance,out,yearyear):
+    """ Process results to plot.
+     Feel free to improve the efficiency of this code
+    """
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    # Process results to plot.
+    # Feel free to improve the efficiency of this code
+    # create set of plots that fits all NEM regions
+    fig = plt.figure(figsize=(14, 9))
+    # horizontal axis with timesamps
+    ts = np.array([t for t in instance.t], dtype=np.datetime64)
+    # cycle through NEM regions`
+    for r in instance.regions:
+        # Set of all technologies in a region
+        evsinregion = _evsinregion(instance, r)
+        # gather technology text_ids in region for plot labels
+        plabels = []
+        for t in evsinregion:
+            plabels.append(tname[t])
+        q_z_r = np.zeros([len(evsinregion), len(instance.t)])
+        # positions of each tech in numpy array
+        pos = dict(zip(list(evsinregion), range(len(evsinregion))))
+        # collect the total dispatch for each technology across Zones in region
+        for z in instance.zones_per_region[r]:
+            for e in instance.ev_tech_per_zone[z]: #KP_ADDED #KP_QUESTION - should dispatch be included for evs? #KP_TO_DO_LATER
+                q_z_r[pos[e], :] = q_z_r[pos[e], :] + \
+                    np.array([value(instance.ev_dumb_charge[z, e, t])
+                              for t in instance.t])
+
+        # Plotting instructions
+        # pick respective subplot
+        if r % 2 == 0:
+            ax = fig.add_subplot(2, 2, r)
+        else:
+            ax = fig.add_subplot(3, 2, r)
+        palr = palette(instance, evsinregion)
+        ax.stackplot(ts, q_z_r, colors=palr)  # dispatch values
+        # ax.plot(ts, load, color='black')  # Put load on top
+        ax.legend(plabels)  # put labels
+        ax.set_title(rname[r])  # Region names
+
+        fig.autofmt_xdate()
+    # plt.show()
+    plt.savefig(results_dir + out  +'/results/' + out  +'_charge_dumb_'+str(yearyear)+'.png')
+def plotevresults_smart_charge(instance,out,yearyear):
+    """ Process results to plot.
+     Feel free to improve the efficiency of this code
+    """
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    # Process results to plot.
+    # Feel free to improve the efficiency of this code
+    # create set of plots that fits all NEM regions
+    fig = plt.figure(figsize=(14, 9))
+    # horizontal axis with timesamps
+    ts = np.array([t for t in instance.t], dtype=np.datetime64)
+    # cycle through NEM regions`
+    for r in instance.regions:
+        # Set of all technologies in a region
+        evsinregion = _evsinregion(instance, r)
+        # gather technology text_ids in region for plot labels
+        plabels = []
+        for t in evsinregion:
+            plabels.append(tname[t])
+        q_z_r = np.zeros([len(evsinregion), len(instance.t)])
+        # positions of each tech in numpy array
+        pos = dict(zip(list(evsinregion), range(len(evsinregion))))
+        # collect the total dispatch for each technology across Zones in region
+        for z in instance.zones_per_region[r]:
+            for e in instance.ev_tech_per_zone[z]: #KP_ADDED #KP_QUESTION - should dispatch be included for evs? #KP_TO_DO_LATER
+                q_z_r[pos[e], :] = q_z_r[pos[e], :] + \
+                    np.array([value(instance.ev_smart_charge[z, e, t])
+                              for t in instance.t])
+
+        # Plotting instructions
+        # pick respective subplot
+        if r % 2 == 0:
+            ax = fig.add_subplot(2, 2, r)
+        else:
+            ax = fig.add_subplot(3, 2, r)
+        palr = palette(instance, evsinregion)
+        ax.stackplot(ts, q_z_r, colors=palr)  # dispatch values
+        # ax.plot(ts, load, color='black')  # Put load on top
+        ax.legend(plabels)  # put labels
+        ax.set_title(rname[r])  # Region names
+
+        fig.autofmt_xdate()
+    # plt.show()
+    plt.savefig(results_dir + out  +'/results/' + out  +'_charge_smart_'+str(yearyear)+'.png')
+def plotevresults_transport(instance,out,yearyear):
+    """ Process results to plot.
+     Feel free to improve the efficiency of this code
+    """
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    # Process results to plot.
+    # Feel free to improve the efficiency of this code
+    # create set of plots that fits all NEM regions
+    fig = plt.figure(figsize=(14, 9))
+    # horizontal axis with timesamps
+    ts = np.array([t for t in instance.t], dtype=np.datetime64)
+    # cycle through NEM regions`
+    for r in instance.regions:
+        # Set of all technologies in a region
+        evsinregion = _evsinregion(instance, r)
+        # gather technology text_ids in region for plot labels
+        plabels = []
+        for t in evsinregion:
+            plabels.append(tname[t])
+        q_z_r = np.zeros([len(evsinregion), len(instance.t)])
+        # positions of each tech in numpy array
+        pos = dict(zip(list(evsinregion), range(len(evsinregion))))
+        # collect the total dispatch for each technology across Zones in region
+        for z in instance.zones_per_region[r]:
+            for e in instance.ev_tech_per_zone[z]: #KP_ADDED #KP_QUESTION - should dispatch be included for evs? #KP_TO_DO_LATER
+                q_z_r[pos[e], :] = q_z_r[pos[e], :] + \
+                    np.array([value(instance.ev_disp_transport[z, e, t])
+                              for t in instance.t])
+
+        # Plotting instructions
+        # pick respective subplot
+        if r % 2 == 0:
+            ax = fig.add_subplot(2, 2, r)
+        else:
+            ax = fig.add_subplot(3, 2, r)
+        palr = palette(instance, evsinregion)
+        ax.stackplot(ts, q_z_r, colors=palr)  # dispatch values
+        # ax.plot(ts, load, color='black')  # Put load on top
+        ax.legend(plabels)  # put labels
+        ax.set_title(rname[r])  # Region names
+
+        fig.autofmt_xdate()
+    # plt.show()
+    plt.savefig(results_dir + out  +'/results/' + out  +'_transport_'+str(yearyear)+'.png')
+
 def _printcosts(inst):
     locale.setlocale(locale.LC_ALL, 'en_AU.UTF-8')
     print("Total Cost:\t %20s" %
@@ -366,7 +653,87 @@ def _printcapacity(instance):
                 disptotal[idx.index(j)] / hours / techtotal[idx.index(j)],
                 capftotal[idx.index(j)] / hours / nperz[idx.index(j)]
             ))
+def _printevs(instance):
+    tname = _get_textid('technology_type')
+    hours = float(len(instance.t))
+    evtechtotal = [0] * len(instance.all_tech)
+    evdisptotal = [0] * len(instance.all_tech)
+    evdisptranstotal = [0] * len(instance.all_tech)
+    evchargetotal = [0] * len(instance.all_tech)
+    evdumbtotal = [0] * len(instance.all_tech)
+    evsmarttotal = [0] * len(instance.all_tech)
+    evincentivetotal = [0] * len(instance.all_tech)
+    evnperz = [0] * len(instance.all_tech)
+    idx = list(instance.all_tech)
+    for z in instance.zones:
+        print(" ZONE: {}".format(z))
+        for e in instance.ev_tech_per_zone[z]: #KP_ADDED
+            evtechtotal[idx.index(e)] += value(instance.ev_cap_op[z, e])
+            evdisptotal[idx.index(e)] += value(sum(instance.ev_v2g_disp[z, e, t]
+                                                 for t in instance.t))
+            evdisptranstotal[idx.index(e)] += value(sum(instance.ev_disp_transport[z, e, t]
+                                                 for t in instance.t))
+            evchargetotal[idx.index(e)] += value(sum(instance.ev_charge[z, e, t]
+                                                 for t in instance.t))
+            evdumbtotal[idx.index(e)] += value(sum(instance.ev_dumb_charge[z, e, t] #KP_Question: should I model this more like the hybrid or storage?? #KP_TO_DO_LATER
+                                                 for t in instance.t))
+            evsmarttotal[idx.index(e)] += value(sum(instance.ev_smart_charge[z, e, t] #KP_Question: should I model this more like the hybrid or storage?? #KP_TO_DO_LATER
+                                                 for t in instance.t))
+            evincentivetotal[idx.index(e)] += value(sum(instance.ev_smart_charge[z, e, t] #KP_Question: should I model this more like the hybrid or storage?? #KP_TO_DO_LATER
+                                                 for t in instance.t)) * instance.cost_ev_vom[e]
 
+            print("EV %s:   Cap: %sWh | Charge: %sWh | Transport: %sWh" % (e,si_format(value(instance.ev_cap_op[z, e]) * 1e6, precision=2), si_format(value(sum(instance.ev_charge[z, e, t] for t in instance.t))* 1e6, precision=2), si_format(value(sum(instance.ev_disp_transport[z, e, t] for t in instance.t))* 1e6, precision=2)))
+
+            evnperz[idx.index(e)] += 1
+    evNEMcap = sum(evtechtotal)
+    evNEMdis = sum(evdisptotal)
+    evNEMdisTrans = sum(evdisptranstotal)
+    evNEMcharge = sum(evchargetotal)
+    evNEMdumbcharge = sum(evdumbtotal)
+    evNEMsmartcharge = sum(evsmarttotal)
+    evNEMincentive = sum(evincentivetotal)
+
+    print("\n **************** EVS ******************* ")
+    print("EV NEM Capacity total: %sWh\nEV NEM V2G Dispatch total: %sWh\nEV NEM Transport Dispatch total: %sWh\nEV NEM Charge total: %sWh\nEV NEM DUMB Charge total: %sWh\nEV NEM SMART Charge total: %sWh\nEV Incentive payments ( @ $10/kWh): $ %s" % (
+          si_format(evNEMcap * 1e6, precision=2),
+          si_format(evNEMdis * 1e6, precision=2),
+          si_format(evNEMdisTrans * 1e6, precision=2),
+          si_format(evNEMcharge * 1e6, precision=2),
+          si_format(evNEMdumbcharge * 1e6, precision=2),
+          si_format(evNEMsmartcharge * 1e6, precision=2),
+          si_format(evNEMincentive, precision=2)
+          ))
+
+    for j in instance.all_tech:
+        if evtechtotal[idx.index(j)] > 0:
+            print("%17s: %7sW | V2G dispatch: %7sWh | Transport dispatch: %7sWh | Charge: %7sWh | DUMB Charge: %7sWh | SMART Charge: %7sWh" % (
+                tname[j],
+                si_format(evtechtotal[idx.index(j)] * 1e6, precision=1),
+                si_format(evdisptotal[idx.index(j)] * 1e6, precision=1),
+                si_format(evdisptranstotal[idx.index(j)] * 1e6, precision=1),
+                si_format(evchargetotal[idx.index(j)] * 1e6, precision=1),
+                si_format(evdumbtotal[idx.index(j)] * 1e6, precision=1),
+                si_format(evsmarttotal[idx.index(j)] * 1e6, precision=1),
+            ))
+
+def plot_evs(instance,scen_name,yearyear):
+    tname = _get_textid('technology_type')
+    for r in instance.regions:
+        evsinregion = _evsinregion(instance, r)
+        plabels = []
+        for t in evsinregion:
+            plabels.append(tname[t])
+        # print(plabels)
+    if len(plabels)>0:
+        plotevcapacity(instance, scen_name, instance.name)
+        plotevresults_v2g(instance, scen_name, instance.name)
+        plotevresults_charge(instance, scen_name, instance.name)
+        plotevresults_dumb_charge(instance, scen_name, instance.name)
+        plotevresults_smart_charge(instance, scen_name, instance.name)
+        plotevresults_transport(instance, scen_name, instance.name)
+        save_ev_traces(instance, scen_name, instance.name)
+    else:
+        print("No EVS to print")
 
 def printstats(instance,scen_name,yearyear):
     """Print summary of results for model instance"""
@@ -374,12 +741,72 @@ def printstats(instance,scen_name,yearyear):
     _printcosts(instance)
     _printunserved(instance)
     _printemissionrate(instance)
+    _print_starting_conds(instance)
+    _printevs(instance)
+    # plotcluster(instance)
+    save_gen_traces(instance,scen_name,yearyear)
+    save_load_traces(instance,scen_name,yearyear)
 
     plotresults(instance, scen_name, instance.name)
     save_results(instance, scen_name, instance.name)
     plotcapacity(instance, scen_name, instance.name)
 
+    plot_evs(instance,scen_name,yearyear)
+
+
     print("End of results for %s" % instance.name, flush=True)
+
+def _print_starting_conds(instance):
+        tname = _get_textid('technology_type')
+        hours = float(len(instance.t))
+        techtotal = [0] * len(instance.all_tech)
+        nperz = [0] * len(instance.all_tech)
+        idx = list(instance.all_tech)
+        for z in instance.zones:
+            for n in instance.gen_tech_per_zone[z]:
+                techtotal[idx.index(n)] += value(instance.gen_cap_initial[z, n])
+                nperz[idx.index(n)] += 1
+            for s in instance.stor_tech_per_zone[z]:
+                techtotal[idx.index(s)] += value(instance.stor_cap_initial[z, s])
+                nperz[idx.index(s)] += 1
+            for h in instance.hyb_tech_per_zone[z]:
+                techtotal[idx.index(h)] += value(instance.hyb_cap_initial[z, h])
+                nperz[idx.index(h)] += 1
+
+        NEMcap = sum(techtotal)
+        print("NEM Starting Capacity: %sW" % (
+              si_format(NEMcap * 1e6, precision=2)
+              ))
+
+        for j in instance.all_tech:
+            if techtotal[idx.index(j)] > 0:
+                print("%17s: %7sW" % (
+                    tname[j],
+                    si_format(techtotal[idx.index(j)] * 1e6, precision=1)
+                ))
+def _print_retirements(instance):
+        tname = _get_textid('technology_type')
+        hours = float(len(instance.t))
+        techtotal = [0] * len(instance.all_tech)
+        nperz = [0] * len(instance.all_tech)
+        idx = list(instance.all_tech)
+        for z in instance.zones:
+            for n in instance.gen_tech_per_zone[z]:
+                techtotal[idx.index(n)] += value(instance.gen_cap_ret[z, n])
+                nperz[idx.index(n)] += 1
+
+        NEMcap = sum(techtotal)
+        print("NEM Retired Capacity: %sW" % (
+              si_format(NEMcap * 1e6, precision=2)
+              ))
+
+        for j in instance.all_tech:
+            if techtotal[idx.index(j)] > 0:
+                print("%17s: %7sW" % (
+                    tname[j],
+                    si_format(techtotal[idx.index(j)] * 1e6, precision=1)
+                ))
+
 
 
 def plotcluster(cluster, row=3, col=4, ylim=None, show=False):  # pragma: no cover
@@ -412,6 +839,180 @@ def plotcluster(cluster, row=3, col=4, ylim=None, show=False):  # pragma: no cov
         else:
             ax.set_ylim(ylim[0], ylim[1])
     # Show results
-    if show:
-        plt.show()
+    plt.savefig(results_dir + out  +'/results/' + out  +'_cluster_'+str(yearyear)+'.png')
+    # if show:
+    #     plt.show()
     return plt
+
+def save_ev_traces(instance,out,yearyear):
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    ts = np.array([t for t in instance.t], dtype=np.datetime64)
+
+    for r in instance.regions:
+        evsinregion = _evsinregion(instance, r)
+        plabels = []
+        for t in evsinregion:
+            plabels.append(tname[t])
+        pos = dict(zip(list(evsinregion), range(len(evsinregion))))
+
+        # collect the total dispatch for each technology across Zones in region
+        for z in instance.zones_per_region[r]:
+            transport_np = np.zeros([len(evsinregion), len(instance.t)])
+            charge_np = np.zeros([len(evsinregion), len(instance.t)])
+            dumbcharge_np = np.zeros([len(evsinregion), len(instance.t)])
+            smartcharge_np = np.zeros([len(evsinregion), len(instance.t)])
+            v2g_np = np.zeros([len(evsinregion), len(instance.t)])
+            evlevel_np = np.zeros([len(evsinregion), len(instance.t)])
+            evreserve_np = np.zeros([len(evsinregion), len(instance.t)])
+            connected_np = np.zeros([len(evsinregion), len(instance.t)])
+            for e in instance.ev_tech_per_zone[z]:
+                transport_np[pos[e], :] = transport_np[pos[e], :] + \
+                    np.array([value(instance.ev_disp_transport[z, e, t])
+                              for t in instance.t])
+
+                charge_np[pos[e], :] = charge_np[pos[e], :] + \
+                    np.array([value(instance.ev_charge[z, e, t])
+                              for t in instance.t])
+
+                dumbcharge_np[pos[e], :] = dumbcharge_np[pos[e], :] + \
+                    np.array([value(instance.ev_dumb_charge[z, e, t])
+                              for t in instance.t])
+
+                smartcharge_np[pos[e], :] = smartcharge_np[pos[e], :] + \
+                    np.array([value(instance.ev_smart_charge[z, e, t])
+                              for t in instance.t])
+
+                v2g_np[pos[e], :] = v2g_np[pos[e], :] + \
+                    np.array([value(instance.ev_v2g_disp[z, e, t])
+                              for t in instance.t])
+
+                evlevel_np[pos[e], :] = evlevel_np[pos[e], :] + \
+                    np.array([value(instance.ev_level[z, e, t])
+                              for t in instance.t])
+
+                evreserve_np[pos[e], :] = evreserve_np[pos[e], :] + \
+                    np.array([value(instance.ev_reserve[z, e, t])
+                              for t in instance.t])
+
+                connected_np[pos[e], :] = connected_np[pos[e], :] + \
+                    np.array([value(instance.ev_connected[z, e, t])
+                              for t in instance.t])
+
+            transport_npdf = pd.DataFrame(transport_np)
+            transport_npdf.columns = ts
+            transport_npdf.index = plabels
+            transport = transport_npdf.transpose()
+            transport.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_transport_z'+str(z)+'.csv', index = True)
+
+            charge_npdf = pd.DataFrame(charge_np)
+            charge_npdf.columns = ts
+            charge_npdf.index = plabels
+            charge = charge_npdf.transpose()
+            charge.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_charge_z'+str(z)+'.csv', index = True)
+
+            dumbcharge_npdf = pd.DataFrame(dumbcharge_np)
+            dumbcharge_npdf.columns = ts
+            dumbcharge_npdf.index = plabels
+            dumbcharge = dumbcharge_npdf.transpose()
+            dumbcharge.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_dumbcharge_z'+str(z)+'.csv', index = True)
+
+            smartcharge_npdf = pd.DataFrame(smartcharge_np)
+            smartcharge_npdf.columns = ts
+            smartcharge_npdf.index = plabels
+            smartcharge = smartcharge_npdf.transpose()
+            smartcharge.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_smartcharge_z'+str(z)+'.csv', index = True)
+
+            v2g_npdf = pd.DataFrame(v2g_np)
+            v2g_npdf.columns = ts
+            v2g_npdf.index = plabels
+            v2g = v2g_npdf.transpose()
+            v2g.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_v2g_z'+str(z)+'.csv', index = True)
+
+            evlevel_npdf = pd.DataFrame(evlevel_np)
+            evlevel_npdf.columns = ts
+            evlevel_npdf.index = plabels
+            evlevel = evlevel_npdf.transpose()
+            evlevel.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_evlevel_z'+str(z)+'.csv', index = True)
+
+            evreserve_npdf = pd.DataFrame(evreserve_np)
+            evreserve_npdf.columns = ts
+            evreserve_npdf.index = plabels
+            evreserve = evreserve_npdf.transpose()
+            evreserve.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_evreserve_z'+str(z)+'.csv', index = True)
+
+            connected_npdf = pd.DataFrame(connected_np)
+            connected_npdf.columns = ts
+            connected_npdf.index = plabels
+            connected = connected_npdf.transpose()
+            connected.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_evconnected_z'+str(z)+'.csv', index = True)
+
+def save_gen_traces(instance,out,yearyear):
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    ts = np.array([t for t in instance.t], dtype=np.datetime64)
+
+    for r in instance.regions:
+        techsinregion = _techsinregion(instance, r)
+        plabels = []
+        for t in techsinregion:
+            plabels.append(tname[t])
+        pos = dict(zip(list(techsinregion), range(len(techsinregion))))
+
+        # collect the total dispatch for each technology across Zones in region
+        for z in instance.zones_per_region[r]:
+            gen_np = np.zeros([len(techsinregion), len(instance.t)])
+
+            for n in instance.gen_tech_per_zone[z]:
+                gen_np[pos[n], :] = gen_np[pos[n], :] + \
+                    np.array([value(instance.gen_disp[z, n, t])
+                              for t in instance.t])
+            for s in instance.stor_tech_per_zone[z]:
+                gen_np[pos[s], :] = gen_np[pos[s], :] + \
+                    np.array([value(instance.stor_disp[z, s, t])
+                              for t in instance.t])
+            for h in instance.hyb_tech_per_zone[z]:
+                gen_np[pos[h], :] = gen_np[pos[h], :] + \
+                    np.array([value(instance.hyb_disp[z, h, t])
+                              for t in instance.t])
+
+            gen_npdf = pd.DataFrame(gen_np)
+            gen_npdf.columns = ts
+            gen_npdf.index = plabels
+            gen = gen_npdf.transpose()
+            gen.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_generation_z'+str(z)+'.csv', index = True)
+
+def save_load_traces(instance,out,yearyear):
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    ts = np.array([t for t in instance.t], dtype=np.datetime64)
+
+    for r in instance.regions:
+        techsinregion = _techsinregion(instance, r)
+        plabels = []
+        for t in techsinregion:
+            plabels.append(tname[t])
+        pos = dict(zip(list(techsinregion), range(len(techsinregion))))
+
+        # gather load for NEM region from solved model instance
+        load = np.array([value(instance.region_net_demand[r, t])
+                         for t in instance.t])
+        demand_df = pd.DataFrame(load)
+        demand_df.index = ts
+        # demand = demand_df.transpose()
+        demand_df.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_demand_region_'+str(r)+'.csv', index = True)
+
+        # collect the total charging load for each technology across Zones in region
+        for z in instance.zones_per_region[r]:
+            load_np = np.zeros([len(techsinregion), len(instance.t)])
+
+            for s in instance.stor_tech_per_zone[z]:
+                load_np[pos[s], :] = load_np[pos[s], :] + \
+                    np.array([value(instance.stor_charge[z, s, t])
+                              for t in instance.t])
+
+            load_npdf = pd.DataFrame(load_np)
+            load_npdf.columns = ts
+            load_npdf.index = plabels
+            loads = load_npdf.transpose()
+            loads.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_stor_charge_load_z'+str(z)+'.csv', index = True)

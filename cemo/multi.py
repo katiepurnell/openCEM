@@ -144,6 +144,11 @@ class SolveTemplate:
         if config.has_option('Scenario', 'cost_emit'):
             self.cost_emit = json.loads(Scenario['cost_emit'])
 
+        self.v2g_enabled = Scenario['v2g_enabled']
+        self.smart_enabled = Scenario['smart_enabled']
+        print("v2g_enabled exists, {}".format(self.v2g_enabled))
+        print("Smart_enabled exists, {}".format(self.smart_enabled))
+
         self.manual_intercon_build = None
         if config.has_option('Scenario', 'manual_intercon_build'):
             self.manual_intercon_build = json.loads(Scenario['manual_intercon_build'])
@@ -216,6 +221,30 @@ class SolveTemplate:
             raise ValueError(
                 'openCEM-discountrate: Value must be between 0 and 1')
         self._discountrate = data
+
+    @property
+    def v2g_enabled(self):
+        '''Property getter for v2g_enabled'''
+        return self._v2g_enabled
+
+    @v2g_enabled.setter
+    def v2g_enabled(self, data):
+        if float(data) < 0 or float(data) > 1:
+            raise ValueError(
+                'openCEM-v2g_enabled: Value must be between 0 and 1')
+        self._v2g_enabled = data
+
+    @property
+    def smart_enabled(self):
+        '''Property getter for smart_enabled'''
+        return self._smart_enabled
+
+    @smart_enabled.setter
+    def smart_enabled(self, data):
+        if float(data) < 0 or float(data) > 1:
+            raise ValueError(
+                'openCEM-smart_enabled: Value must be between 0 and 1')
+        self._smart_enabled = data
 
     @property
     def cost_emit(self):
@@ -407,6 +436,7 @@ class SolveTemplate:
         self.dispgentech = {}
         self.redispgentech = {}
         self.hybtech = {}
+        self.evtech = {}
         self.gentech = {}
         self.stortech = {}
         self.retiretech = {}
@@ -430,6 +460,9 @@ class SolveTemplate:
             self.hybtech.update({
                 i: [j for j in self.all_tech_per_zone[i] if j in cemo.const.HYB_TECH]
             })
+            self.evtech.update({
+                i: [j for j in self.all_tech_per_zone[i] if j in cemo.const.EV_TECH]
+            })
             self.gentech.update({
                 i: [j for j in self.all_tech_per_zone[i] if j in cemo.const.GEN_TECH]
             })
@@ -448,7 +481,7 @@ class SolveTemplate:
         if self.Years.index(year):
             prevyear = self.Years[self.Years.index(year) - 1]
             opcap0 = "load '" + str(self.wrkdir / ('gen_cap_op' + str(prevyear) + '.json')) \
-                     + "' : [zones,all_tech] gen_cap_initial stor_cap_initial hyb_cap_initial intercon_cap_initial;"
+                     + "' : [zones,all_tech] gen_cap_initial stor_cap_initial hyb_cap_initial ev_cap_initial intercon_cap_initial;"
         else:
             opcap0 = '''#operating capacity for generating techs regions
 load "opencem.ckvu5hxg6w5z.ap-southeast-1.rds.amazonaws.com" database=opencem_input
@@ -480,6 +513,17 @@ where (ntndp_zone_id,technology_type_id) in
 and commissioning_year is NULL
 group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
 
+# operating capacity for ev techs in regions
+# N.B. Taking the openCEM hosted db for this to set initial EV capacity as 0 which is approximately correct in 2020.
+load "opencem.ckvu5hxg6w5z.ap-southeast-1.rds.amazonaws.com" database=opencem_input
+user=select password=select_password1 using=pymysql
+query="select ntndp_zone_id as zones, technology_type_id as all_tech, sum(reg_cap) as ev_cap_initial
+from capacity
+where (ntndp_zone_id,technology_type_id) in
+''' + sql_tech_pairs(self.evtech) + '''
+and commissioning_year is NULL
+group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
+
 # operating capacity for intercons in nodes
 # Currently extracted from cemo.const during initalisation
 '''
@@ -508,12 +552,15 @@ group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
         keywords = {
             'cost_gen_build': 'zonetech',
             'cost_hyb_build': 'zonetech',
+            'cost_ev_build': 'zonetech',
             'cost_stor_build': 'zonetech',
             'cost_fuel': 'zonetech',
             'cost_gen_fom': 'tech',
             'cost_gen_vom': 'tech',
             'cost_hyb_fom': 'tech',
             'cost_hyb_vom': 'tech',
+            'cost_ev_fom': 'tech',
+            'cost_ev_vom': 'tech',
             'cost_stor_fom': 'tech',
             'cost_stor_vom': 'tech'}
         if self.custom_costs is not None:
@@ -558,6 +605,7 @@ group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
             'gen_cap_exo': 'zonetech',
             'stor_cap_exo': 'zonetech',
             'hyb_cap_exo': 'zonetech',
+            'ev_cap_exo': 'zonetech',
             'ret_gen_cap_exo': 'zonetech',
         }
         exogenous_capacity ='\n'
@@ -694,6 +742,18 @@ group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
                 + "param nem_re_disp_ratio := " +\
                   str(self.nem_re_disp_ratio[self.Years.index(year)]) + ";\n"
 
+        v2g_enabled = ""
+        if self.v2g_enabled:
+            v2g_enabled = "\n#NEM wide ratio of EV fleet V2G enabled\n"\
+                + "param percent_v2g_enabled := " + \
+                str(self.v2g_enabled) + ";\n"
+
+        smart_enabled = ""
+        if self.smart_enabled:
+            smart_enabled = "\n#NEM wide ratio of EV fleet smart-charging enabled\n"\
+                + "param percent_smart_enabled := " + \
+                str(self.smart_enabled) + ";\n"
+
         if self.Years.index(year) == 0:
             prevyear = 2017
         else:
@@ -704,6 +764,7 @@ group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
                 for line in fin:
                     line = line.replace('[regions]', " ".join(
                         str(i) for i in self.regions))
+                    line = line.replace('[regionslist]', sql_list(self.regions))
                     line = line.replace('[zones]', " ".join(
                         str(i) for i in self.zones))
                     line = line.replace('[zoneslist]', sql_list(self.zones))
@@ -724,6 +785,10 @@ group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
                     line = line.replace('[hybtechdb]', sql_tech_pairs(self.hybtech))
                     line = line.replace('[hybtechlist]', sql_list(
                         [tech for tech in cemo.const.HYB_TECH if tech in self.all_tech]))
+                    line = line.replace('[evtech]', dclist(self.evtech))
+                    line = line.replace('[evtechdb]', sql_tech_pairs(self.evtech))
+                    line = line.replace('[evtechlist]', sql_list(
+                        [tech for tech in cemo.const.EV_TECH if tech in self.all_tech]))
                     line = line.replace('[retiretech]',
                                         dclist(self.retiretech))
                     line = line.replace('[retiretechdb]',
@@ -750,6 +815,9 @@ group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
                         '[hybtechset]', " ".join(
                             str(i) for i in cemo.const.HYB_TECH))
                     line = line.replace(
+                        '[evtechset]', " ".join(
+                            str(i) for i in cemo.const.EV_TECH))
+                    line = line.replace(
                         '[nobuildset]', " ".join(
                             str(i) for i in cemo.const.NOBUILD_TECH))
                     line = line.replace('[carryforwardcap]', opcap0)
@@ -767,6 +835,8 @@ group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
                 fo.write(nem_emit_limit)
                 fo.write(nem_disp_ratio)
                 fo.write(nem_re_disp_ratio)
+                fo.write(v2g_enabled)
+                fo.write(smart_enabled)
         return str(dcfName)
 
     def get_model_options(self, year):
@@ -854,7 +924,7 @@ group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
         '''Merge the full year JSON output for each simulated year in a single dictionary'''
         data = self.generate_metadata()
         # Save json output named after .cfg file
-        with open(self.cfgfile.with_name(self.cfgfile.stem + '.json'), 'w') as out_file:
+        with open(self.wrkdir / (self.cfgfile.with_name(self.cfgfile.stem + '.json')), 'w') as out_file:
             json.dump(data, out_file)
             out_file.write('\n')
             for year in self.Years:
@@ -879,6 +949,8 @@ group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
             "System emission limit": self.nem_emit_limit,
             "Dispatchable generation ratio ": self.nem_disp_ratio,
             "Renewable Dispatchable generation ratio ": self.nem_re_disp_ratio,
+            "EV fleet V2G enabled ratio ": self.v2g_enabled,
+            "EV fleet smart charging enabled ratio ": self.smart_enabled,
             "Custom costs": pd.read_csv(self.custom_costs).fillna(value={'zone': 0}).fillna(99e7).to_dict(orient='records') if self.custom_costs is not None else None,  # noqa
             "Exogenous Capacity decisions": pd.read_csv(self.exogenous_capacity).to_dict(orient='records') if self.exogenous_capacity is not None else None,  # noqa
             "Exogenous Transmission decisions": pd.read_csv(self.exogenous_transmission).to_dict(orient='records') if self.exogenous_transmission is not None else None,  # noqa

@@ -22,7 +22,7 @@ from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import pdist
 
 from cemo.jsonify import fill_complex_param, fill_complex_mutable_param
-from cemo.const import GEN_TECH, HYB_TECH, TRACE_TECH
+from cemo.const import GEN_TECH, HYB_TECH, TRACE_TECH, EV_TECH
 
 
 def next_weekday(date, int_weekday):
@@ -253,6 +253,7 @@ class InstanceCluster(ClusterData):
         self.time = instance.t
         self.gen_cap_factor = fill_complex_mutable_param(instance.gen_cap_factor)
         self.hyb_cap_factor = fill_complex_mutable_param(instance.hyb_cap_factor)
+        self.ev_cap_factor = fill_complex_mutable_param(instance.ev_cap_factor)
         self.regions = instance.regions
         self.zones_per_region = instance.zones_per_region
         self.windowidth = 24*7
@@ -293,6 +294,8 @@ class InstanceCluster(ClusterData):
                     tech_trace = 'gen_cap_factor'
                 if tech in HYB_TECH:
                     tech_trace = 'hyb_cap_factor'
+                if tech in EV_TECH:
+                    tech_trace = 'ev_cap_factor'
                 for zone in self.zones_per_region[region]:
                     TRACE = np.array([i['value']
                                       for i in getattr(self, tech_trace)
