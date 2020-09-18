@@ -393,9 +393,13 @@ def con_evcharge(model, z, e, t):
 
 # RULE 2: Maximum storage level less than total installed capacity
 def con_maxchargeev(model, z, e, t): # KP_MODIFIED 170920 such that the ev_level can't go below 20% of max batt cap either
-    '''EV storage cannot charge beyond its maximum charge capacity'''
-    return 0.2 * model.ev_cap_op[z, e] <= model.ev_level[z, e, t] <= model.ev_cap_op[z, e] #KP_MODIFIED_010920 to remove the 1e-3 and keep in mw
-        # <= 1e-3*model.ev_cap_op[z, e] #N.B. following suit for 1e3 from jose. wasn't in my intial. ev cap op in mw. so this is in gw?
+    '''EV storage cannot charge beyond its maximum charge capacity or under the EV battery fleet floor'''
+    return model.ev_level[z, e, t] <= model.ev_cap_op[z, e]
+
+# RULE 2B: Minimum storage level
+def con_minchargeev(model, z, e, t): # KP_MODIFIED 170920 such that the ev_level can't go below 20% of max batt cap either
+    '''EV storage cannot charge beyond its maximum charge capacity or under the EV battery fleet floor'''
+    return model.ev_level[z, e, t] >= model.ev_level_floor * model.ev_cap_op[z, e]
 
 # RULE 3: Energy balance
 def con_ev_flow_lim(model, zone, ev_tech, time):

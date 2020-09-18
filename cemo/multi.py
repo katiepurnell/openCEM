@@ -146,8 +146,10 @@ class SolveTemplate:
 
         self.v2g_enabled = Scenario['v2g_enabled']
         self.smart_enabled = Scenario['smart_enabled']
+        self.ev_level_floor_soc = Scenario['ev_level_floor_soc']
         print("v2g_enabled exists, {}".format(self.v2g_enabled))
         print("Smart_enabled exists, {}".format(self.smart_enabled))
+        print("EV Batt Floor, {}".format(self.ev_level_floor_soc))
 
         self.manual_intercon_build = None
         if config.has_option('Scenario', 'manual_intercon_build'):
@@ -245,6 +247,18 @@ class SolveTemplate:
             raise ValueError(
                 'openCEM-smart_enabled: Value must be between 0 and 1')
         self._smart_enabled = data
+
+    @property
+    def ev_level_floor_soc(self):
+        '''Property getter for ev_level_floor_soc'''
+        return self._ev_level_floor_soc
+
+    @ev_level_floor_soc.setter
+    def ev_level_floor_soc(self, data):
+        if float(data) < 0 or float(data) > 1:
+            raise ValueError(
+                'openCEM-ev_level_floor_soc: Value must be between 0 and 1')
+        self._ev_level_floor_soc = data
 
     @property
     def cost_emit(self):
@@ -754,6 +768,12 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
                 + "param percent_smart_enabled := " + \
                 str(self.smart_enabled) + ";\n"
 
+        ev_level_floor_soc = ""
+        if self.ev_level_floor_soc:
+            ev_level_floor_soc = "\n#NEM wide EV fleet battery floor\n"\
+                + "param ev_level_floor := " + \
+                str(self.ev_level_floor_soc) + ";\n"
+
         if self.Years.index(year) == 0:
             prevyear = 2017
         else:
@@ -837,6 +857,7 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
                 fo.write(nem_re_disp_ratio)
                 fo.write(v2g_enabled)
                 fo.write(smart_enabled)
+                fo.write(ev_level_floor_soc)
         return str(dcfName)
 
     def get_model_options(self, year):
@@ -951,6 +972,7 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
             "Renewable Dispatchable generation ratio ": self.nem_re_disp_ratio,
             "EV fleet V2G enabled ratio ": self.v2g_enabled,
             "EV fleet smart charging enabled ratio ": self.smart_enabled,
+            "EV fleet floor ": self.ev_level_floor_soc,
             "Custom costs": pd.read_csv(self.custom_costs).fillna(value={'zone': 0}).fillna(99e7).to_dict(orient='records') if self.custom_costs is not None else None,  # noqa
             "Exogenous Capacity decisions": pd.read_csv(self.exogenous_capacity).to_dict(orient='records') if self.exogenous_capacity is not None else None,  # noqa
             "Exogenous Transmission decisions": pd.read_csv(self.exogenous_transmission).to_dict(orient='records') if self.exogenous_transmission is not None else None,  # noqa

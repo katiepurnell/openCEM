@@ -205,6 +205,8 @@ def jsonify(inst, year):
                 inst.percent_v2g_enabled.value,
                 inst.percent_smart_enabled.name:
                 inst.percent_smart_enabled.value,
+                inst.ev_level_floor.name:
+                inst.ev_level_floor.value,
             },
             'vars': {
                 inst.gen_cap_new.name:

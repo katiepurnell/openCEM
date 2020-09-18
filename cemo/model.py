@@ -33,7 +33,7 @@ from cemo.rules import (ScanForHybridperZone, ScanForEVperZone, ScanForStoragepe
                         con_committed_cap, con_disp_ramp_down, con_disp_ramp_up, con_emissions,
                         con_gen_cap, con_hyb_cap, con_hyb_flow_lim,
                         con_hyb_level_max, con_hyb_reserve_lim, con_hybcharge,
-                        con_ev_cap, con_evcharge, con_maxchargeev, con_ev_flow_lim, con_ev_trans_disp,
+                        con_ev_cap, con_evcharge, con_maxchargeev, con_minchargeev, con_ev_flow_lim, con_ev_trans_disp,
                         con_ev_reserve_lim, con_ev_v2g, con_ev_level_max, con_ev_num_vehicles,
                         con_intercon_cap, con_ldbal, con_max_mhw_per_zone,
                         con_max_mwh_nem_wide, con_max_trans, con_maxcap,
@@ -55,8 +55,9 @@ def model_options(**kwargs):
               'nem_ret_gwh': False,
               'region_ret_ratio': False,
               'nem_disp_ratio': True,
-              'v2g_enabled': False, #KP_MODIFIED_180820 - this is what I had in the old file but shouldn't this be true??
-              'smart_enabled': False, #KP_MODIFIED_180820 - this is what I had in the old file but shouldnt this be true??
+              'v2g_enabled': False,
+              'smart_enabled': False,
+              'ev_level_floor_soc': False,
               'nem_re_disp_ratio': False,
               'build_intercon_manual': False}
     opt = namedtuple('model_options', [i for i in FIELDS])
@@ -226,6 +227,8 @@ class CreateModel():
         self.m.percent_v2g_enabled = Param(default=0)
         # % Fleet Smart EV Charging enabled
         self.m.percent_smart_enabled = Param(default=0.5)
+        # EV Fleet Batt Level Floor
+        self.m.ev_level_floor = Param(default=0.2)
 
         # Generator tech fixed charge rate
         self.m.fixed_charge_rate = Param(self.m.all_tech, initialize=init_fcr)
@@ -572,6 +575,8 @@ class CreateModel():
         self.m.con_ev_level_max = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_level_max)
         # RULE 2 - MAX. STORAGE LEVEL # Maxiumum charge capacity of storage
         self.m.MaxChargeev = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_maxchargeev)
+        # RULE 2B - MIN. STORAGE LEVEL # Minimum charge capacity of storage
+        self.m.MinChargeev = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_minchargeev)
         # RULE 3 - ENERGY BALANCE # Maxiumum rate of ev storage charge/discharge
         self.m.con_ev_flow_lim = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_flow_lim)
         # RULE 4 - BATTERY RESERVE LIMIT # Limit ev reserve capacity to be within storage level
