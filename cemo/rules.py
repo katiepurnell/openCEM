@@ -748,7 +748,11 @@ def cost_operating(model):
         + sum(model.cost_hyb_vom[h] * 1e3*model.hyb_disp[z, h, t]
               for z in model.zones
               for h in model.hyb_tech_per_zone[z] for t in model.t)
-        + sum(model.cost_ev_vom[e] * 1e3*model.ev_v2g_disp[z, e, t]
+        )
+
+def cost_v2g_payments(model):
+    return model.year_correction_factor * (
+        sum(model.cost_ev_vom[e] * model.ev_v2g_disp[z, e, t]
               for z in model.zones
               for e in model.ev_tech_per_zone[z] for t in model.t)
         )
@@ -795,7 +799,7 @@ def system_cost(model):
     return cost_capital(model) + cost_repayment(model)\
         + cost_fixed(model) + cost_unserved(model) + cost_operating(model)\
         + cost_trans_build(model) + cost_trans_flow(model) + cost_emissions(model)\
-        + cost_retirement(model)
+        + cost_retirement(model) + cost_v2g_payments(model)
 
 
 def obj_cost(model):
@@ -803,5 +807,5 @@ def obj_cost(model):
     return (cost_capital_model(model)
             + cost_fixed(model) + cost_unserved(model) + cost_operating(model)
             + cost_trans_build_model(model)
-            + cost_trans_flow(model) + cost_emissions(model)
+            + cost_trans_flow(model) + cost_emissions(model) + cost_v2g_payments(model)
             + cost_retirement_model(model) + cost_shadow(model)) / model.year_correction_factor

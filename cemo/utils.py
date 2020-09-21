@@ -176,7 +176,7 @@ def save_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
 
     # df['Total Cost'] = [locale.currency(value(inst.Obj - cemo.rules.cost_shadow(inst)))]
 
-    df['Total Cost'] = [locale.currency(value(cemo.rules.system_cost(inst)))]
+    df['Total System Cost'] = [locale.currency(value(cemo.rules.system_cost(inst)))]
     df['Shadow Costs'] = [locale.currency(value(cemo.rules.cost_shadow(inst)))]
     df['Dan Obj Less Shadow'] = [locale.currency(value(inst.Obj - cemo.rules.cost_shadow(inst)))]
 
@@ -200,6 +200,8 @@ def save_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
 
     df["Emission cost"]=[locale.currency(value(cemo.rules.cost_emissions(inst)))]
     df["Retirmt cost"]=[locale.currency(value(cemo.rules.cost_retirement(inst)))]
+
+    df["V2G Payments"] = [locale.currency(value(cemo.rules.cost_v2g_payments(inst)))]
 
     total_emissions = 0
     total_dispatch = 0
@@ -590,6 +592,11 @@ def _printcosts(inst):
     print("Retirmt cost:\t %20s" %
           locale.currency(value(cemo.rules.cost_retirement(inst)),
                           grouping=True))
+    print("V2G Payments @ 10c/kWh ($100/MWh):\t %20s" %
+          locale.currency(value(cemo.rules.cost_v2g_payments(inst)),
+                          grouping=True))
+    print("year_correction_factor:\t %s" % value(inst.year_correction_factor(inst)))
+
 def _printemissionrate(instance):
     emrate = sum(value(cemo.rules.emissions(instance, r))
                  for r in instance.regions) /\
@@ -679,8 +686,8 @@ def _printevs(instance):
                                                  for t in instance.t))
             evsmarttotal[idx.index(e)] += value(sum(instance.ev_smart_charge[z, e, t] #KP_Question: should I model this more like the hybrid or storage?? #KP_TO_DO_LATER
                                                  for t in instance.t))
-            evincentivetotal[idx.index(e)] += value(sum(instance.ev_smart_charge[z, e, t] #KP_Question: should I model this more like the hybrid or storage?? #KP_TO_DO_LATER
-                                                 for t in instance.t)) * instance.cost_ev_vom[e]
+            # evincentivetotal[idx.index(e)] += value(sum(instance.ev_smart_charge[z, e, t] #KP_Question: should I model this more like the hybrid or storage?? #KP_TO_DO_LATER
+            #                                      for t in instance.t)) * instance.cost_ev_vom[e]
 
             print("EV %s:   Cap: %sWh | Charge: %sWh | Transport: %sWh" % (e,si_format(value(instance.ev_cap_op[z, e]) * 1e6, precision=2), si_format(value(sum(instance.ev_charge[z, e, t] for t in instance.t))* 1e6, precision=2), si_format(value(sum(instance.ev_disp_transport[z, e, t] for t in instance.t))* 1e6, precision=2)))
 
@@ -691,17 +698,16 @@ def _printevs(instance):
     evNEMcharge = sum(evchargetotal)
     evNEMdumbcharge = sum(evdumbtotal)
     evNEMsmartcharge = sum(evsmarttotal)
-    evNEMincentive = sum(evincentivetotal)
+    # evNEMincentive = sum(evincentivetotal)
 
     print("\n **************** EVS ******************* ")
-    print("EV NEM Capacity total: %sWh\nEV NEM V2G Dispatch total: %sWh\nEV NEM Transport Dispatch total: %sWh\nEV NEM Charge total: %sWh\nEV NEM DUMB Charge total: %sWh\nEV NEM SMART Charge total: %sWh\nEV Incentive payments ( @ $10/kWh): $ %s" % (
+    print("EV NEM Capacity total: %sWh\nEV NEM V2G Dispatch total: %sWh\nEV NEM Transport Dispatch total: %sWh\nEV NEM Charge total: %sWh\nEV NEM DUMB Charge total: %sWh\nEV NEM SMART Charge total: %sWh" % (
           si_format(evNEMcap * 1e6, precision=2),
           si_format(evNEMdis * 1e6, precision=2),
           si_format(evNEMdisTrans * 1e6, precision=2),
           si_format(evNEMcharge * 1e6, precision=2),
           si_format(evNEMdumbcharge * 1e6, precision=2),
-          si_format(evNEMsmartcharge * 1e6, precision=2),
-          si_format(evNEMincentive, precision=2)
+          si_format(evNEMsmartcharge * 1e6, precision=2)
           ))
 
     for j in instance.all_tech:
