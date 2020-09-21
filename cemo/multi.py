@@ -71,9 +71,9 @@ def roundup(cap):
     return cap
 
 
-def setinstancecapacity(instance, clustercap):
+def setinstancecapacity(instance, data): #clustercap
     ''' Fix capacity varibles from cluster results to speed up dispatch calculation'''
-    data = clustercap.data
+    #data = clustercap.data
     for z in instance.zones:
         for n in instance.gen_tech_per_zone[z]:
             key = str(z) + ',' + str(n)
@@ -498,44 +498,48 @@ class SolveTemplate:
                      + "' : [zones,all_tech] gen_cap_initial stor_cap_initial hyb_cap_initial ev_cap_initial intercon_cap_initial;"
         else:
             opcap0 = '''#operating capacity for generating techs regions
-load "opencem.ckvu5hxg6w5z.ap-southeast-1.rds.amazonaws.com" database=opencem_input
+load "opencem-isp2020.cyisekdyolmb.ap-southeast-2.rds.amazonaws.com" database=opencem_input
 user=select password=select_password1 using=pymysql
 query="select ntndp_zone_id as zones, technology_type_id as all_tech, sum(reg_cap) as gen_cap_initial
 from capacity
 where (ntndp_zone_id,technology_type_id) in
 ''' + sql_tech_pairs(self.gentech) + '''
 and commissioning_year is NULL
+and capacity.source_id = 3
 group by zones,all_tech;" : [zones,all_tech] gen_cap_initial;
 
 # operating capacity storage techs in regions
-load "opencem.ckvu5hxg6w5z.ap-southeast-1.rds.amazonaws.com" database=opencem_input
+load "opencem-isp2020.cyisekdyolmb.ap-southeast-2.rds.amazonaws.com" database=opencem_input
 user=select password=select_password1 using=pymysql
 query="select ntndp_zone_id as zones, technology_type_id as all_tech, sum(reg_cap) as stor_cap_initial
 from capacity
 where (ntndp_zone_id,technology_type_id) in
 ''' + sql_tech_pairs(self.stortech) + '''
 and commissioning_year is NULL
+and capacity.source_id = 3
 group by zones,all_tech;" : [zones,all_tech] stor_cap_initial;
 
 # operating capacity for hybrid techs in regions
-load "opencem.ckvu5hxg6w5z.ap-southeast-1.rds.amazonaws.com" database=opencem_input
+load "opencem-isp2020.cyisekdyolmb.ap-southeast-2.rds.amazonaws.com" database=opencem_input
 user=select password=select_password1 using=pymysql
 query="select ntndp_zone_id as zones, technology_type_id as all_tech, sum(reg_cap) as hyb_cap_initial
 from capacity
 where (ntndp_zone_id,technology_type_id) in
 ''' + sql_tech_pairs(self.hybtech) + '''
 and commissioning_year is NULL
+and capacity.source_id = 3
 group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
 
 # operating capacity for ev techs in regions
 # N.B. Taking the openCEM hosted db for this to set initial EV capacity as 0 which is approximately correct in 2020.
-load "opencem.ckvu5hxg6w5z.ap-southeast-1.rds.amazonaws.com" database=opencem_input
+load "opencem-isp2020.cyisekdyolmb.ap-southeast-2.rds.amazonaws.com" database=opencem_input
 user=select password=select_password1 using=pymysql
 query="select ntndp_zone_id as zones, technology_type_id as all_tech, sum(reg_cap) as ev_cap_initial
 from capacity
 where (ntndp_zone_id,technology_type_id) in
 ''' + sql_tech_pairs(self.evtech) + '''
 and commissioning_year is NULL
+and capacity.source_id = 3
 group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
 
 # operating capacity for intercons in nodes
@@ -699,7 +703,8 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
         strd1 = "'" + str(date1) + "'"
         date2 = datetime.datetime(year, 6, 30, 23, 0, 0)
         if test:
-            date2 = datetime.datetime(year - 1, 7, 12, 23, 0, 0)
+            #date2 = datetime.datetime(year - 1, 7, 12, 23, 0, 0)
+            date2 = datetime.datetime(year - 1, 7, 7, 23, 0, 0)
         strd2 = "'" + str(date2) + "'"
         drange = "BETWEEN " + strd1 + " AND " + strd2
         dcfName = self.wrkdir / ('Sim' + str(year) + '.dat')
@@ -909,7 +914,8 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
                     model_options=self.get_model_options(y),
                     solver=self.solver,
                     log=self.log).run_cluster()
-                inst = setinstancecapacity(inst, ccap)
+                #inst = setinstancecapacity(inst, ccap)
+                inst = setinstancecapacity(inst, ccap.data)
 
             # Solve the model (or just dispatch if capacity has been solved)
             opt = SolverFactory(self.solver)

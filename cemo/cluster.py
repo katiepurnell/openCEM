@@ -444,7 +444,7 @@ class ClusterRun:
         if self.log:
             cmd.append("--output-solver-log")
             cmd.append("--traceback")
-            stdout = subprocess.PIPE
+            stdout = None #subprocess.PIPE
 
         proc = subprocess.run(cmd, stdout=stdout)
         if proc.returncode == 0:

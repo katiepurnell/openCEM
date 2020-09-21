@@ -195,7 +195,7 @@ def con_operating_reserve(model, region, time):
               for zone in model.zones_per_region[region]
               for ev_tech in model.ev_tech_per_zone[zone]
               )\
-        >= model.nem_disp_ratio * model.region_net_demand[region, time]
+        >= model.nem_disp_ratio * model.region_net_demand_less_evs[region, time]
 
 
 def con_nem_re_disp_ratio(model, r, t):
@@ -273,8 +273,7 @@ def con_max_cap_factor_per_zone(model, zone, tech):
     if cemo.const.DEFAULT_MAX_CAP_FACTOR_PER_ZONE.get(tech) is not None:
         return (sum(model.gen_disp[zone, tech, time] for time in model.t)
                 <= 1e-3 * cemo.const.DEFAULT_MAX_CAP_FACTOR_PER_ZONE.get(tech).get(zone)
-                * 8760 * model.gen_cap_op[zone, tech]
-                / model.year_correction_factor)
+                * 8760 * model.gen_cap_op[zone, tech] / model.year_correction_factor)
     return Constraint.Skip
 
 
@@ -464,7 +463,7 @@ def con_ldbal(model, z, t):
         + sum(1e3*model.stor_disp[z, s, t] for s in model.stor_tech_per_zone[z])\
         + sum(1e3*model.intercon_disp[p, z, t] for p in model.intercon_per_zone[z])\
         + model.unserved[z, t]\
-        == model.region_net_demand[region_in_zone(z), t] * model.zone_demand_factor[z, t]\
+        == model.region_net_demand_less_evs[region_in_zone(z), t] * model.zone_demand_factor[z, t]\
         + sum((1.0 + model.intercon_loss_factor[z, p]) * 1e3*model.intercon_disp[z, p, t]
               for p in model.intercon_per_zone[z])\
         + sum(model.stor_charge[z, s, t] for s in model.stor_tech_per_zone[z])\
@@ -600,7 +599,7 @@ def con_committed_cap(model, z, n, t):
 def con_uns(model, r):
     '''constraint limiting unserved energy'''
     return sum(model.unserved[z, t] for z in model.zones_per_region[r] for t in model.t) \
-        <= 0.00002 * sum(model.region_net_demand[r, t] for t in model.t)
+        <= 0.00002 * sum(model.region_net_demand_less_evs[r, t] for t in model.t)
 
 
 def cost_repayment(model):

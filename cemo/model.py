@@ -321,6 +321,11 @@ class CreateModel():
             self.m.retire_gen_tech_in_zones, default=0, mutable=True)
         # Net Electrical load (may include rooftop and EV)
         self.m.region_net_demand = Param(self.m.regions, self.m.t)
+        self.m.region_net_demand_less_evs = Param(self.m.regions, self.m.t) #Removing the EV demand (AEMO assumed) for each year
+
+        # AEMO EV Demand trace
+        self.m.aemo_ev = Param(self.m.regions, self.m.t)
+
         # Zone load distribution factors as a pct of region demand
         self.m.zone_demand_factor = Param(
             self.m.zones, self.m.t, initialize=init_zone_demand_factors)
@@ -373,7 +378,7 @@ class CreateModel():
                                 within=NonNegativeReals, bounds=cemo.const.CAP_BOUNDS)
         self.m.ev_cap_op = Var(self.m.ev_tech_in_zones, within=NonNegativeReals)
 
-        intercon_bounds = cemo.const.CAP_BOUNDS
+        intercon_bounds = None #cemo.const.CAP_BOUNDS
         if self.model_options.build_intercon_manual:
             intercon_bounds = (0, 0)
 
@@ -478,7 +483,7 @@ class CreateModel():
         # MaxMWh limit as capacity factor
         self.m.con_max_cap_factor_per_zone = Constraint(
             self.m.gen_tech_in_zones, rule=con_max_cap_factor_per_zone)
-        # MaxMWh limit (currently only for hydro)
+        # MaxMWh limit (currently only for BIOMASS)
         self.m.con_max_mwh_nem_wide = Constraint(
             self.m.all_tech, rule=con_max_mwh_nem_wide)
         # linearised unit commitment constraints

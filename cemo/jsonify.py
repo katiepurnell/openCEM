@@ -136,6 +136,10 @@ def jsonify(inst, year):
                 fill_complex_mutable_param(inst.ret_gen_cap_exo),
                 inst.region_net_demand.name:
                 fill_complex_param(inst.region_net_demand),
+                inst.region_net_demand_less_evs.name:
+                fill_complex_param(inst.region_net_demand_less_evs),
+                inst.aemo_ev.name:
+                fill_complex_param(inst.aemo_ev),
 
                 # params with many scalar keys and
                 inst.cost_gen_fom.name:
@@ -187,6 +191,10 @@ def jsonify(inst, year):
                 inst.cost_cap_carry_forward.name:
                 fill_scalar_key_mutable_param(inst.cost_cap_carry_forward),
 
+                'gen_com_mincap': const.GEN_COMMIT['mincap'],
+                'gen_com_penalty': const.GEN_COMMIT['penalty'],
+                'gen_com_effrate': const.GEN_COMMIT['effrate'],
+
                 # params with scalar value
                 inst.cost_unserved.name:
                 inst.cost_unserved.value,
@@ -231,6 +239,12 @@ def jsonify(inst, year):
                 fill_complex_var(inst.gen_cap_ret),
                 inst.gen_disp.name:
                 fill_complex_var(inst.gen_disp, 1e3),
+
+                inst.gen_disp_com.name:
+                fill_complex_var(inst.gen_disp_com, 1e3),
+                inst.gen_disp_com_p.name:
+                fill_complex_var(inst.gen_disp_com_p, 1e3),
+
                 inst.stor_disp.name:
                 fill_complex_var(inst.stor_disp, 1e3),
                 inst.stor_charge.name:
@@ -313,6 +327,7 @@ def jsoninit(inst, year):
     del out['fuel_gen_tech_per_zone']
     del out['retire_gen_tech_per_zone']
     del out['hyb_tech_per_zone']
+    del out['ev_tech_per_zone']
     del out['stor_tech_per_zone']
     del out['intercon_per_zone']
     for entry in out:
@@ -445,11 +460,11 @@ def fill_complex_var(var, scale=1):
     return out
 
 
-def fill_dual_suffix(dual, name):
+def fill_dual_suffix(dual, name, scale=1):
     '''Return dual suffix dictionary'''
     out = []
     for i in name:
-        out.append({'index': i, 'value': dual[name[i]]})
+        out.append({'index': i, 'value': scale * dual[name[i]]})
 
     return out
 

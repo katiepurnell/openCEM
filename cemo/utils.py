@@ -81,7 +81,7 @@ def plotresults(instance, out,yearyear):  # pragma: no cover
         plabels.insert(0, 'load')
 
         # gather load for NEM region from solved model instance
-        load = np.array([value(instance.region_net_demand[r, t])
+        load = np.array([value(instance.region_net_demand_less_evs[r, t])
                          for t in instance.t])
         # Empty array of dispatch qtt
         q_z_r = np.zeros([len(techsinregion), len(instance.t)])
@@ -160,7 +160,7 @@ def save_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
     df['Nem Cap Total'] = [sum(techtotal)]
     df['Nem Disp Total'] = [sum(disptotal)]
     for r in inst.regions:
-        load = sum(inst.region_net_demand[r, t] for t in inst.t) #(np.array([value(inst.region_net_demand[r, t]) for t in inst.t]))
+        load = sum(inst.region_net_demand_less_evs[r, t] for t in inst.t) #(np.array([value(inst.region_net_demand_less_evs[r, t]) for t in inst.t]))
         # load_less_evs = sum(inst.region_net_demand_less_evs[r, t] for t in inst.t) #KP_MODIFIED_170820
         # aemo_ev_load = sum(inst.aemo_ev[r, t] for t in inst.t) #KP_MODIFIED_170820
         # df['Total Load'] = [sum(load)/1000]
@@ -180,7 +180,7 @@ def save_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
     df['Shadow Costs'] = [locale.currency(value(cemo.rules.cost_shadow(inst)))]
     df['Dan Obj Less Shadow'] = [locale.currency(value(inst.Obj - cemo.rules.cost_shadow(inst)))]
 
-    df["Overall LCOE"] = [locale.currency(value((inst.Obj - cemo.rules.cost_shadow(inst)) / sum(inst.region_net_demand[r, t]
+    df["Overall LCOE"] = [locale.currency(value((inst.Obj - cemo.rules.cost_shadow(inst)) / sum(inst.region_net_demand_less_evs[r, t]
                                                                                 for r in inst.regions
                                                                                 for t in inst.t)))]
 
@@ -610,7 +610,7 @@ def _printunserved(instance):
             = 100.0 * sum(value(instance.unserved[zone, time])
                           for zone in instance.zones_per_region[region]
                           for time in instance.t) \
-            / sum(value(instance.region_net_demand[region, time]) for time in instance.t)
+            / sum(value(instance.region_net_demand_less_evs[region, time]) for time in instance.t)
 
     print('Unserved %:' + str(unserved))
 def _printcapacity(instance):
@@ -1001,7 +1001,7 @@ def save_load_traces(instance,out,yearyear):
         pos = dict(zip(list(techsinregion), range(len(techsinregion))))
 
         # gather load for NEM region from solved model instance
-        load = np.array([value(instance.region_net_demand[r, t])
+        load = np.array([value(instance.region_net_demand_less_evs[r, t])
                          for t in instance.t])
         demand_df = pd.DataFrame(load)
         demand_df.index = ts
@@ -1022,3 +1022,74 @@ def save_load_traces(instance,out,yearyear):
             load_npdf.index = plabels
             loads = load_npdf.transpose()
             loads.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_stor_charge_load_z'+str(z)+'.csv', index = True)
+
+def plotDemandtrace(instance,out,yearyear):  # pragma: no cover #KP_MODIFIED_170820
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+
+    # create set of plots that fits all NEM regions
+    fig = plt.figure(figsize=(14, 9))
+    # horizontal axis with timesamps
+    ts = np.array([t for t in instance.t], dtype=np.datetime64)
+    # cycle through NEM regions`
+    for r in instance.regions:
+        # Set of all technologies in a region
+        techsinregion = _techsinregion(instance, r)
+        plabels = ["net_demand","net_demand_less_evs"]
+
+        # gather load for NEM region from solved model instance
+        load = np.array([value(instance.region_net_demand[r, t])
+                         for t in instance.t])
+        load_less_evs = np.array([value(instance.region_net_demand_less_evs[r, t])
+                         for t in instance.t]) #KP_MODIFIED_170820
+        # aemo_ev_load = np.array([value(instance.aemo_ev[r, t]) #KP_MODIFIED_170820
+                         # for t in instance.t])
+
+        # Plotting instructions
+        # pick respective subplot
+        if r % 2 == 0:
+            ax = fig.add_subplot(2, 2, r)
+        else:
+            ax = fig.add_subplot(3, 2, r)
+        palr = palette(instance, techsinregion)
+        # ax.stackplot(ts, q_z_r, colors=palr)  # dispatch values
+        ax.plot(ts, load, color='black')  # Put load on top
+        ax.plot(ts, load_less_evs, color='red')  #KP_MODIFIED_170820
+        # ax.plot(ts, aemo_ev_load, color='purple')  #KP_MODIFIED_170820
+        ax.legend(plabels)  # put labels
+        ax.set_title(rname[r])  # Region names
+
+def plotAEMOEVtrace(instance,out,yearyear):  # pragma: no cover #KP_MODIFIED_170820
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+
+    # create set of plots that fits all NEM regions
+    fig = plt.figure(figsize=(14, 9))
+    # horizontal axis with timesamps
+    ts = np.array([t for t in instance.t], dtype=np.datetime64)
+    # cycle through NEM regions`
+    for r in instance.regions:
+        # Set of all technologies in a region
+        techsinregion = _techsinregion(instance, r)
+
+        plabels = ["aemo_ev_demand"]
+
+        aemo_ev_load = np.array([value(instance.aemo_ev[r, t]) #KP_MODIFIED_170820
+                         for t in instance.t])
+
+        # Plotting instructions
+        # pick respective subplot
+        if r % 2 == 0:
+            ax = fig.add_subplot(2, 2, r)
+        else:
+            ax = fig.add_subplot(3, 2, r)
+        palr = palette(instance, techsinregion)
+        ax.plot(ts, aemo_ev_load, color='purple')  #KP_MODIFIED_170820
+        ax.legend(plabels)  # put labels
+        ax.set_title(rname[r])  # Region names
+
+        fig.autofmt_xdate()
+    # plt.show()
+    # KP_MODIFIED to save to file rather than pause the program and display
+    # plt.savefig('E:/OneDrive - UNSW/PhD/Modelling/OpenCEM_EVBranch_KP/openCEM/' + out + '/results/' + out  +'_dispatch_allgen_'+str(yearyear)+'.png')
+    plt.savefig(results_dir + out  +'/results/' + out  +'_demand_aemo_evs_'+str(yearyear)+'.png')
