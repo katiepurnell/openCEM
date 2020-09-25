@@ -9,42 +9,42 @@ __email__ = "jose.zapata@itpau.com.au"
 REGION = {1: 'NSW', 2: 'QLD', 3: 'SA', 4: 'TAS', 5: 'VIC'}
 
 TECH_TYPE = {
-    1: 'biomass',
-    2: 'ccgt',
-    3: 'ccgt_ccs',
-    4: 'coal_sc',
-    5: 'coal_sc_ccs',
-    6: 'brown_coal_sc',
-    7: 'brown_coal_sc_ccs',
-    8: 'ocgt',
-    9: 'solar_pv_dat',
-    10: 'solar_pv_ffp',
-    11: 'solar_pv_sat',
-    12: 'wind',
-    13: 'cst_6h',
+    1: 'biomass', # N.B. no initial generators in ISP2020 (was 385MW in 2018...). N.B. no costing available in this version either - replaced by tech 34 - don't include
+    2: 'ccgt', # N.B. no capex for this - nobuild tech -> new costs are in the new tech type 36
+    3: 'ccgt_ccs', # N.B. no capex for this - nobuild tech
+    4: 'coal_sc', # N.B. no capex for this - nobuild tech
+    5: 'coal_sc_ccs', # N.B. no capex for this - nobuild tech
+    6: 'brown_coal_sc', # N.B. no capex for this - nobuild tech
+    7: 'brown_coal_sc_ccs', # N.B. no capex for this - nobuild tech
+    8: 'ocgt', # N.B. no capex for this - nobuild tech
+    9: 'solar_pv_dat', # Dual-axis tracking # N.B. no capex for this - nobuild tech
+    10: 'solar_pv_ffp', # Fixed flat PV # N.B. no capex for this - nobuild tech
+    11: 'solar_pv_sat', # Single-axis tracking # N.B. no capex costings for z4 or 14 ( SEQ & ADE ) - maybe its the size / population density?
+    12: 'wind', # N.B. no capex costings for z4 or 14 ( SEQ & ADE ) - maybe its the size / population density?
+    13: 'cst_6h', # N.B. no capex costings for z4 or 14 ( SEQ & ADE ) - maybe its the size / population density?
     14: 'phes_6h',
     15: 'battery_2h',
-    16: 'recip_engine',
-    17: 'wind_h',
-    18: 'hydro',
-    19: 'gas_thermal',
-    20: 'pumps',
-    21: 'phes_168h',
-    22: 'cst_3h',
-    23: 'cst_12h',
-    24: 'phes_3h',
+    16: 'recip_engine', # N.B. no capex for this - nobuild tech. For ISP2020 only initially in z13 & 14
+    17: 'wind_h', # N.B. no capex costings for z4 or 14 ( SEQ & ADE ) - maybe its the size / population density?
+    18: 'hydro', # N.B. no capex for this - nobuild tech
+    19: 'gas_thermal', # N.B. no capex for this - nobuild tech
+    20: 'pumps', # N.B. no capex for this - nobuild tech and no opex either -> no initial capacity either - do not include
+    21: 'phes_168h', #SNOWY2.0 # N.B. no capex for this - nobuild tech and no opex either -> no initial capacity either - costings are from the exo file I believe. Z5
+    22: 'cst_3h', # N.B. no capex for this - nobuild tech and no opex either -> no initial capacity either - in exo file
+    23: 'cst_12h', # N.B. no capex for this - nobuild tech and no opex either -> no initial capacity either - in exo file
+    24: 'phes_3h', # N.B. no capex for this - nobuild tech and no opex either -> no initial capacity either - in exo file
     25: 'phes_12h',
-    26: 'battery_1h',
-    27: 'battery_3h',
-    28: 'coal_sc_new',
-    29: 'brown_coal_sc_new',
-    30: 'wind_offshore',
-    31: 'phes_24h',
-    32: 'phes_48h',
-    33: 'battery_4h',
-    34: 'biomass_new',
-    35: 'ocgt_new',
-    36: 'ccgt_new',
+    26: 'battery_1h',# N.B. no capex for this - nobuild tech and no opex either -> no initial capacity either - in exo file
+    27: 'battery_3h', # N.B. no capex for this - nobuild tech and no opex either -> no initial capacity either - in exo file
+    28: 'coal_sc_new', # No capex for z9 (LV lower VIC)
+    29: 'brown_coal_sc_new', # N.B. costings only available for z9 (VIC) which makes sense
+    30: 'wind_offshore', # N.B. no costings for z4 or 14 ( SEQ & ADE ) - unsure why
+    31: 'phes_24h', # N.B. available for all zones
+    32: 'phes_48h', # N.B. available for all zones
+    33: 'battery_4h', # N.B. available for all zones
+    34: 'biomass_new', # N.B. available for all zones
+    35: 'ocgt_new', # N.B. available for all zones
+    36: 'ccgt_new', # N.B. available for all zones
     50: 'private_cars',
     51: 'light_commercial_vehicles',
     52: 'taxis',
@@ -648,7 +648,7 @@ GEN_COMMIT = {
 ALL_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
             12, 13, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36]
 
-DISPLAY_ORDER =  [6, 7, 29, 12, 13, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 50,51,52,53,60,61,70]
+DISPLAY_ORDER =  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 29, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 50,51,52,53,60,61,70]
 GEN_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17, 18, 19, 20, 28, 29, 30, 34, 35, 36]
 RE_GEN_TECH = [1, 9, 10, 11, 12, 17, 18, 30, 34]
 DISP_GEN_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 16, 18, 19, 28, 29, 34, 35, 36]
@@ -663,7 +663,7 @@ STOR_TECH = [14, 15, 21, 24, 25, 31, 32, 26, 27, 33]
 
 
 RETIRE_TECH = [2, 3, 4, 5, 6, 7, 8, 16, 19]
-NOBUILD_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 18, 19, 21]  # 3, 5 and 7 no build due to incomplete data
+NOBUILD_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 18, 19, 21]  # 3, 5 and 7 no build due to incomplete data #KP_MODIFIED to include 10 (solar pv ffp) because its not listed in the capex db
 SYNC_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 13, 15, 16, 18, 19, 34, 36]
 
 EV_TECH = [50,51,52,53,60,61,70]
