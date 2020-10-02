@@ -298,8 +298,8 @@ DEFAULT_HEAT_RATE = {
     28: 8.975, #8.66
     29: 11.337,
     34: 13.39,
-    35: 7.57533,
-    36: 11.7497
+    35: 11.7497, #KP_MODIFIED - Jose had OCGT & CCGT switched: prev: 7.57533
+    36: 7.57533 #KP_MODIFIED - Jose had OCGT & CCGT switched: prev: 11.7497
 }
 DEFAULT_FUEL_EMIT_RATE = {
     1: 57.13,
@@ -316,7 +316,7 @@ DEFAULT_FUEL_EMIT_RATE = {
     29: 963.87,
     34: 57.13,
     35: 716.37,
-    36: 459.0,
+    36: 453.9, #KP_MODIFIED to be average of new entrants in ISP2020 - Jose had 459.0
 }
 
 DEFAULT_MAX_CAP_FACTOR_PER_ZONE = {  # tech->zone

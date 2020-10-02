@@ -752,6 +752,7 @@ def printstats(instance,scen_name,yearyear):
     # plotcluster(instance)
     save_gen_traces(instance,scen_name,yearyear)
     save_load_traces(instance,scen_name,yearyear)
+    save_intercon_traces(instance,scen_name,yearyear)
 
     plotresults(instance, scen_name, instance.name)
     save_results(instance, scen_name, instance.name)
@@ -987,6 +988,43 @@ def save_gen_traces(instance,out,yearyear):
             gen_npdf.index = plabels
             gen = gen_npdf.transpose()
             gen.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_generation_z'+str(z)+'.csv', index = True)
+
+def save_intercon_traces(instance,out,yearyear):
+    # tname = _get_textid('technology_type')
+    # rname = _get_textid('region')
+    ts = np.array([t for t in instance.t], dtype=np.datetime64)
+    plabels =[]
+
+    # Get label names and set up db
+    for z in instance.zones:
+        for dest in instance.intercon_per_zone[z]:
+            name = "z"+str(z)+"_d"+str(dest)
+            plabels.append(name)
+            # print(name)
+    # print(plabels)
+    pos = dict(zip(list(plabels), range(len(plabels))))
+    intercon_np = np.zeros([len(plabels), len(instance.t)])
+    # print(intercon_np)
+
+    # collect the total dispatch for each intercon link
+    for z in instance.zones:
+        for dest in instance.intercon_per_zone[z]:
+            name = "z"+str(z)+"_d"+str(dest)
+            print(name)
+            print(np.array([value(instance.intercon_disp[z, dest, t]) for t in instance.t]))
+            # intercon_np[name, :] = np.array([value(instance.intercon_disp[z, dest, t])) for t in instance.t])
+
+            intercon_np[pos[name], :] = intercon_np[pos[name], :] + \
+                np.array([value(instance.intercon_disp[z, dest, t])
+                          for t in instance.t])
+
+    print(intercon_np)
+
+    intercon_npdf = pd.DataFrame(intercon_np)
+    intercon_npdf.columns = ts
+    intercon_npdf.index = plabels
+    intercon = intercon_npdf.transpose()
+    intercon.to_csv(results_dir + out  +'/results/' + out +str(yearyear)+'_interconnector_flows.csv', index = True)
 
 def save_load_traces(instance,out,yearyear):
     tname = _get_textid('technology_type')
