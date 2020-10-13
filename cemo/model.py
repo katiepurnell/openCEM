@@ -16,7 +16,7 @@ from cemo.initialisers import (init_cap_factor, init_cost_retire,
                                init_default_fuel_emit_rate,
                                init_default_fuel_price, init_default_heat_rate,
                                init_default_lifetime, init_fcr,
-                               init_gen_build_limit, init_hyb_charge_hours,
+                               init_gen_build_limit, init_gen_build_limit_region, init_hyb_charge_hours,
                                init_hyb_col_mult, init_intercon_build_cost,
                                init_ev_rt_eff,
                                init_ev_charge_rate,  init_ev_batt_size, init_ev_trans_trace,
@@ -105,6 +105,8 @@ class CreateModel():
             dimen=2, initialize=init_zones_in_regions)
         # Set listing technologies avaialable per zone (like a sparsity pattern)
         self.m.gen_tech_in_zones = Set(dimen=2)
+        # Set listing technologies avaialable per region (like a sparsity pattern)
+        self.m.gen_tech_in_regions = Set(dimen=2)
         # Retirable technologies avaialable per zone (like a sparsity pattern)
         self.m.retire_gen_tech_in_zones = Set(dimen=2)
         # Fuel/emmitting technologies avaialable per zone (like a sparsity pattern)
@@ -297,6 +299,8 @@ class CreateModel():
         # Maximum capacity per generating technology per zone
         self.m.gen_build_limit = Param(
             self.m.gen_tech_in_zones, initialize=init_gen_build_limit)
+        self.m.gen_build_limit_region = Param(
+            self.m.gen_tech_in_zones, initialize=init_gen_build_limit_region)
         self.m.gen_cap_initial = Param(
             self.m.gen_tech_in_zones, default=0, mutable=True)  # operating capacity
         self.m.stor_cap_initial = Param(

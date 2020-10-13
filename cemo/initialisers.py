@@ -144,6 +144,11 @@ def init_gen_build_limit(model, zone, tech):
     ''' Default build limits per technology and per zone'''
     return cemo.const.DEFAULT_BUILD_LIMIT.get(zone).get(tech, 50000)
 
+#KP_ADDED to include PHES buid limits per region not per zone
+def init_gen_build_limit_region(model, region, tech):
+    # pylint: disable=unused-argument
+    ''' Default build limits per technology and per region'''
+    return cemo.const.DEFAULT_REGION_BUILD_LIMIT.get(region).get(tech, 5000000)
 
 def init_fcr(model, tech):
     # pylint: disable=unused-argument

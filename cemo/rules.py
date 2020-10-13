@@ -475,6 +475,16 @@ def con_maxcap(model, zone, tech):
     '''Prevent resulting operational capacity to exceed build limits'''
     return model.gen_cap_op[zone, tech] <= model.gen_build_limit[zone, tech]
 
+#KP_ADDED
+def con_maxcap_region(model, zone, tech):
+    '''Prevent resulting operational capacity to exceed build limits'''
+    print("---REGION BUILD LIMITS---")
+    print(tech)
+    print(sum(model.gen_cap_op[zone, tech] for zone in model.gen_tech_per_zone[zone]))
+    print(model.gen_build_limit_region[region, tech])
+    print("-------------------------")
+    return sum(model.gen_cap_op[zone, tech] for zone in model.gen_tech_per_zone[zone]) <= model.gen_build_limit_region[region, tech]
+
 
 def con_emissions(model):
     '''Emission constraint for the NEM in MT/y for total emissions'''

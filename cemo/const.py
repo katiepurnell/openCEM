@@ -21,7 +21,7 @@ TECH_TYPE = {
     10: 'solar_pv_ffp', # Fixed flat PV # N.B. no capex for this - nobuild tech
     11: 'solar_pv_sat', # Single-axis tracking # N.B. no capex costings for z4 or 14 ( SEQ & ADE ) - maybe its the size / population density?
     12: 'wind', # N.B. no capex costings for z4 or 14 ( SEQ & ADE ) - maybe its the size / population density?
-    13: 'cst_6h', # N.B. no capex costings for z4 or 14 ( SEQ & ADE ) - maybe its the size / population density?
+    13: 'cst_8h', # N.B. no capex costings for z4 or 14 ( SEQ & ADE ) - maybe its the size / population density? # KP_MODIFIED from 6hr to 8hr to fit ISP2020 classifications -> stor length already changed below
     14: 'phes_6h',
     15: 'battery_2h',
     16: 'recip_engine', # N.B. no capex for this - nobuild tech. For ISP2020 only initially in z13 & 14
@@ -284,22 +284,22 @@ DEFAULT_FUEL_PRICE = {
     36: 9.68
 }
 
-DEFAULT_HEAT_RATE = {
+DEFAULT_HEAT_RATE = { #GJ/MWh
     1: 12.66,
-    2: 6.93,
+    2: 6.93, #KP_Checked average of existing = 7.8
     3: 7.93,
     4: 9.66,
     5: 11.52,
     6: 12.4,
     7: 17.4,
-    8: 10.15,
-    16: 7.6,
-    19: 10.7,
-    28: 8.975, #8.66
-    29: 11.337,
-    34: 13.39,
-    35: 11.7497, #KP_MODIFIED - Jose had OCGT & CCGT switched: prev: 7.57533
-    36: 7.57533 #KP_MODIFIED - Jose had OCGT & CCGT switched: prev: 11.7497
+    8: 10.15, #KP_Checked average of existing = 12.58
+    16: 7.6, #KP_Checked average of existing = 9.11
+    19: 10.7, #KP_Checked average of existing = 10.8
+    28: 8.975, #8.66 #KP_Checked
+    29: 11.337, #KP_Checked
+    34: 13.39, #KP_Checked
+    35: 11.7497, #KP_MODIFIED - Jose had OCGT & CCGT switched: prev: 7.57533 #KP_Checked
+    36: 7.57533 #KP_MODIFIED - Jose had OCGT & CCGT switched: prev: 11.7497 #KP_Checked
 }
 DEFAULT_FUEL_EMIT_RATE = {
     1: 57.13,
@@ -436,85 +436,119 @@ DEFAULT_TECH_LIFETIME = {  # Source GHD 2018 AEMO cost and technical parameter r
 # Numbers are sum of ISP Build limits plus initial capacity as per capex table
 DEFAULT_BUILD_LIMIT = {
     1: {
-        11: 19400 + 1029, #11: 9250 + 1001,
-        12: 18500 + 0, #12: 8350 + 0,
-        17: 6300 + 224, #17: 2785 + 235,
+        11: 19400 + 1029, #11: 9250 + 1001, #KP_Checked
+        12: 18500 + 0, #12: 8350 + 0, #KP_Checked
+        17: 6300 + 224, #17: 2785 + 235, #KP_Checked
     },
     2: {
-        11: 17900 + 265, #11: 6000 + 170,
-        12: 6300 + 0, #12: 2105,
-        17: 2200 + 0, #17: 695,
+        11: 15700 + 265, #11: 6000 + 170, #KP_Checked - He had 17900+265 but AEMO = 15700 + initial cap 265
+        12: 5500 + 0, #12: 2105, #KP_Checked he had 6300 but AEMO ISP = 5500
+        17: 1900 + 0, #17: 695, #KP_Checked he had 2200 but AEMO ISP = 1900
     },
     3: {
-        11: 7700 + 424, #11: 4000 + 135,
-        12: 4200 + 0, #12: 2090 + 0,
-        17: 1400 + 453, #17: 695 + 453,
+        11: 7700 + 424, #11: 4000 + 135, #KP_Checked
+        12: 4200 + 0, #12: 2090 + 0, #KP_Checked
+        17: 1400 + 453, #17: 695 + 453, #KP_Checked
     },
     4: {
-        11: 0 + 142, #0 + 52.5,
-        12: 0,
-        17: 0,
+        11: 2200 + 142, #0 + 52.5, #KP_Checked - He had 0+142 but AEMO = 2200
+        12: 800, #KP_Checked - He had 0+0 but AEMO = 800
+        17: 300, #KP_Checked - He had 0+0 but AEMO = 300
     },
-    5: {
-        11: 13100 + 1240, #4000 + 3000 + 1000 + 29.9,
-        12: 7800 + 0, #1870 + 1620 + 232.5 + 0,
-        17: 2700 + 199,  #620 + 527.5 + 77.5 + 199,  #
+    5: { # Perhaps this includes the riverlands?
+        11: 5100 + 1240, #4000 + 3000 + 1000 + 29.9, #KP_Checked - He had 13100+1240 but AEMO = 5100
+        12: 4000 + 0, #1870 + 1620 + 232.5 + 0, #KP_Checked - He had 7800+0 but AEMO = 4000
+        17: 1400 + 199,  #620 + 527.5 + 77.5 + 199,  #KP_Checked - He had 2700+199 but AEMO = 1400
     },
     6: {
-        11: 0 + 10, #1000 + 0,
-        12: 200 + 0, #1735 + 0,
-        17: 100 + 641, #575 + 914,
+        11: 8000 + 10, #1000 + 0, #KP_Checked - He had 0+10 but AEMO = 8000
+        12: 4000 + 0, #1735 + 0, #KP_Checked - He had 200+0 but AEMO = 4000
+        17: 1400 + 641, #575 + 914, #KP_Checked - He had 100+641 but AEMO = 1400
     },
     7: {
-        11: 7200 + 436, #6750 + 150,
-        12: 2200 + 0, #2265 + 0,
-        17: 800 + 220, #755 + 431,
+        11: 7200 + 436, #6750 + 150, #KP_Checked
+        12: 2200 + 0, #2265 + 0, #KP_Checked
+        17: 800 + 220, #755 + 431, #KP_Checked
     },
     8: {
-        11: 10000 + 57, #5000 + 57,
-        12: 5600 + 0, #2760 + 0,
-        17: 1800 + 443, #900 + 270,
+        11: 10000 + 57, #5000 + 57, #KP_Checked
+        12: 5600 + 0, #2760 + 0, #KP_Checked
+        17: 1800 + 443, #900 + 270, #KP_Checked
     },
     9: {
-        11: 0,
-        12: 1500 + 0, #105 + 0,
-        17: 500 + 107, #35 + 445,
-        30: 4000 + 0
+        11: 0 #KP_Checked
+        12: 1500 + 0, #105 + 0, #KP_Checked
+        17: 500 + 107, #35 + 445, #KP_Checked
+        30: 4000 + 0 #KP_Checked
     },
     10: {
-        11: 0, #30,
-        12: 2900 + 0, #1725 + 0,
-        17: 1000 + 602, #570 + 1220,
+        11: 0, #30, #KP_Checked
+        12: 2900 + 0, #1725 + 0, #KP_Checked
+        17: 1000 + 602, #570 + 1220, #KP_Checked
     },
     11: {
-        11: 400 + 668, #0 + 3000 + 822,
-        12: 2100 + 0, #1185 + 1620 + 0,
-        17: 700 + 2882, #395 + 527.5 + 1918,
+        11: 5100 + 668, #0 + 3000 + 822, #KP_Checked - He had 400+668 but AEMO = 5100
+        12: 2100 + 0, #1185 + 1620 + 0, #KP_Checked
+        17: 700 + 2882, #395 + 527.5 + 1918, #KP_Checked
     },
     12: {
-        11: 3000 + 112, # 0 + 453,
-        12: 1200, #0
-        17: 400 + 58 #0
+        11: 1900 + 112, # 0 + 453, #KP_Checked - He had 3000+112 but AEMO = 1900
+        12: 1200, #0 #KP_Checked
+        17: 400 + 58 #0 #KP_Checked
     },
-    13: {
-        11: 21900 + 284,  # All NSA + 1/2 of Riverland+ existing #10950 + 1000 + 330,
-        12: 5700 + 0, #2770 + 232.5 + 0,
-        17: 2100 + 1783, #915 + 77.5 + 1462,
+    13: { #NSA - he comments all + 1/2 riverlands - why only half?? But his numbers suggest no riverlands. Have added them in fully here.
+        11: 25900 + 284,  # All NSA + 1/2 of Riverland+ existing #10950 + 1000 + 330, #KP_Checked - He had 21900+284 but AEMO = 25900 (all riverlands) (or 23900 with half riverlands - or 21900 without any riverlands)
+        12: 6700 + 0, #2770 + 232.5 + 0, #KP_Checked - He had 5700+0 but AEMO = 6700 with full riverlands (1000)
+        17: 2500 + 1783, #915 + 77.5 + 1462, #KP_Checked - He had 2100+1783 but AEMO = 2500 with full riverlands (400)
     },
     14: {
-        11: 600, #0
-        12: 3400 + 0, #1820 + 0,
-        17: 1200 + 35, #605 + 35,
+        11: 1300, #0 #KP_Checked - He had 600+0 but AEMO = 1300
+        12: 3400 + 0, #1820 + 0, #KP_Checked
+        17: 1200 + 35, #605 + 35, #KP_Checked
     },
     15: {
-        11: 100 + 108, #0
-        12: 2400 + 0, #1355 + 0,
-        17: 800 + 325, #455 + 484,
+        11: 100 + 108, #0 #KP_Checked
+        12: 2400 + 0, #1355 + 0, #KP_Checked
+        17: 800 + 325, #455 + 484, #KP_Checked
     },
     16: {
-        11: 150, #0
-        12: 7200 + 0, #3480 + 0,
-        17: 2600 + 574, #1155 + 592,
+        11: 150, #0 #KP_Checked
+        12: 7200 + 0, #3480 + 0, #KP_Checked
+        17: 2600 + 574, #1155 + 592, #KP_Checked
+    }
+}
+
+#KP_ADDED for ISP 2020 -> build limits for PHES is represented in regions NOT zones.
+DEFAULT_REGION_BUILD_LIMIT = {
+    1: { #NSW
+        14: 7000, #PHES 6hr
+        25: 7000, #PHES 12hr
+        31: 7000, #PHES 24hr
+        32: 700, #PHES 48hr
+    },
+    2: { #QLD
+        14: 1800, #PHES 6hr
+        25: 1500, #PHES 12hr
+        31: 1100, #PHES 24hr
+        32: 500, #PHES 48hr
+    },
+    3: { #VIC
+        14: 1200, #PHES 6hr
+        25: 1200, #PHES 12hr
+        31: 700, #PHES 24hr
+        32: 500, #PHES 48hr
+    },
+    4: { #SA
+        14: 1130, #PHES 6hr
+        25: 452, #PHES 12hr
+        31: 452, #PHES 24hr
+        32: 0, #PHES 48hr
+    },
+    5: { #TAS
+        14: 966, #PHES 6hr
+        25: 600, #PHES 12hr
+        31: 1200, #PHES 24hr
+        32: 371, #PHES 48hr
     }
 }
 
@@ -529,17 +563,17 @@ GEN_CAP_FACTOR = {
 
 CAP_FACTOR_THRES = 1e-4
 
-DEFAULT_STOR_PROPS = {
-    14: {"rt_eff": 0.8, "charge_hours": 6},
-    24: {"rt_eff": 0.8, "charge_hours": 3},
-    25: {"rt_eff": 0.8, "charge_hours": 12},
-    21: {"rt_eff": 0.8, "charge_hours": 168},
-    15: {"rt_eff": 0.8, "charge_hours": 2},
-    26: {"rt_eff": 0.8, "charge_hours": 1},
-    27: {"rt_eff": 0.8, "charge_hours": 3},
-    31: {"rt_eff": 0.8, "charge_hours": 24},
-    32: {"rt_eff": 0.8, "charge_hours": 48},
-    33: {"rt_eff": 0.8, "charge_hours": 4}
+DEFAULT_STOR_PROPS = { #Updated ISP2020 rt eff for batts 0.8 to 0.81
+    14: {"rt_eff": 0.8, "charge_hours": 6}, #phes
+    24: {"rt_eff": 0.8, "charge_hours": 3}, #phes
+    25: {"rt_eff": 0.8, "charge_hours": 12}, #phes
+    21: {"rt_eff": 0.8, "charge_hours": 168}, #phes
+    15: {"rt_eff": 0.81, "charge_hours": 2}, #batt
+    26: {"rt_eff": 0.81, "charge_hours": 1}, #batt
+    27: {"rt_eff": 0.81, "charge_hours": 3}, #batt
+    31: {"rt_eff": 0.8, "charge_hours": 24}, #phes
+    32: {"rt_eff": 0.8, "charge_hours": 48}, #phes
+    33: {"rt_eff": 0.81, "charge_hours": 4} #batt
 }
 
 DEFAULT_HYB_PROPS = {
@@ -663,7 +697,7 @@ STOR_TECH = [14, 15, 21, 24, 25, 31, 32, 26, 27, 33]
 
 
 RETIRE_TECH = [2, 3, 4, 5, 6, 7, 8, 16, 19]
-NOBUILD_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 18, 19, 21]  # 3, 5 and 7 no build due to incomplete data #KP_MODIFIED to include 10 (solar pv ffp) because its not listed in the capex db
+NOBUILD_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 18, 19, 20, 21]  # 3, 5 and 7 no build due to incomplete data #KP_MODIFIED to include 10 (solar pv ffp) because its not listed in the capex db
 SYNC_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 13, 15, 16, 18, 19, 34, 36]
 
 EV_TECH = [50,51,52,53,60,61,70]
