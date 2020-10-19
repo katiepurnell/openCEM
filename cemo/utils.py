@@ -221,6 +221,53 @@ def save_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
     #             df["LCOE Cost" + str(tname[e])] = [locale.currency(value(cemo.rules.cost_lcoe(inst, e)))]
     df.to_csv(results_dir + out  +'/results/' +out+'_results_'+str(yearyear)+'.csv')
 
+#KP_TO_PRINT -> zone capacity per tech
+def save_cap_zone_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    hours = float(len(inst.t))
+    techtotal = [0] * len(inst.all_tech)
+    disptotal = [0] * len(inst.all_tech)
+    capftotal = [0] * len(inst.all_tech)
+    nperz = [0] * len(inst.all_tech)
+    idx = list(inst.all_tech)
+    for z in inst.zones:
+        for n in inst.gen_tech_per_zone[z]:
+            techtotal[idx.index(n)] += value(inst.gen_cap_op[z, n])
+            disptotal[idx.index(n)] += value(sum(inst.gen_disp[z, n, t]
+                                                 for t in inst.t))
+            capftotal[idx.index(n)] += value(sum(inst.gen_cap_factor[z, n, t]
+                                                 for t in inst.t))
+            nperz[idx.index(n)] += 1
+        for s in inst.stor_tech_per_zone[z]:
+            techtotal[idx.index(s)] += value(inst.stor_cap_op[z, s])
+            disptotal[idx.index(s)] += value(sum(inst.stor_disp[z, s, t]
+                                                 for t in inst.t))
+            capftotal[idx.index(s)] += 0.5 * hours
+            nperz[idx.index(s)] += 1
+
+        for h in inst.hyb_tech_per_zone[z]:
+            techtotal[idx.index(h)] += value(inst.hyb_cap_op[z, h])
+            disptotal[idx.index(h)] += value(sum(inst.hyb_disp[z, h, t]
+                                                 for t in inst.t))
+            capftotal[idx.index(h)] += value(sum(inst.hyb_cap_factor[z, h, t]
+                                                 for t in inst.t))
+            nperz[idx.index(h)] += 1
+
+
+    df = pd.DataFrame()
+    df['Nem Cap Total'] = [sum(techtotal)]
+    df['Nem Disp Total'] = [sum(disptotal)]
+
+    for j in inst.all_tech:
+        if techtotal[idx.index(j)] > 0:
+            df['Capcity'+str(tname[j])] = [techtotal[idx.index(j)] * 1e6]
+            df['dispatch'+str(tname[j])] = [disptotal[idx.index(j)] * 1e6]
+            df['avg cap factor'+str(tname[j])] = [disptotal[idx.index(j)] / hours / techtotal[idx.index(j)]* 1e3]
+
+    df.to_csv(results_dir + out  +'/results/' +out+'_cap_results_'+str(yearyear)+'.csv')
+
+
 def plotcapacity(instance, out,yearyear):  # pragma: no cover
     """ Stacked plot of capacities
      Feel free to improve the efficiency of this code
@@ -1010,15 +1057,15 @@ def save_intercon_traces(instance,out,yearyear):
     for z in instance.zones:
         for dest in instance.intercon_per_zone[z]:
             name = "z"+str(z)+"_d"+str(dest)
-            print(name)
-            print(np.array([value(instance.intercon_disp[z, dest, t]) for t in instance.t]))
+            # print(name)
+            # print(np.array([value(instance.intercon_disp[z, dest, t]) for t in instance.t]))
             # intercon_np[name, :] = np.array([value(instance.intercon_disp[z, dest, t])) for t in instance.t])
 
             intercon_np[pos[name], :] = intercon_np[pos[name], :] + \
                 np.array([value(instance.intercon_disp[z, dest, t])
                           for t in instance.t])
 
-    print(intercon_np)
+    # print(intercon_np)
 
     intercon_npdf = pd.DataFrame(intercon_np)
     intercon_npdf.columns = ts

@@ -8,7 +8,7 @@ __email__ = "jose.zapata@itpau.com.au"
 
 REGION = {1: 'NSW', 2: 'QLD', 3: 'SA', 4: 'TAS', 5: 'VIC'}
 
-TECH_TYPE = {
+TECH_TYPE = { #Redundant tech = 1,3,5,7,9,10,20,22,23,24,27
     1: 'biomass', # N.B. no initial generators in ISP2020 (was 385MW in 2018...). N.B. no costing available in this version either - replaced by tech 34 - don't include
     2: 'ccgt', # N.B. no capex for this - nobuild tech -> new costs are in the new tech type 36
     3: 'ccgt_ccs', # N.B. no capex for this - nobuild tech
@@ -266,8 +266,8 @@ DEFAULT_CAPEX = {
     21: 2549019.607  # 2040MW for $AUD 5.2 Billion
 }
 
-DEFAULT_FUEL_PRICE = {
-    1: 0.5,
+DEFAULT_FUEL_PRICE = { #batts + re + phes fuel cost = 0
+    1: 0.53, #New entrant biomass -> same for all regions for all years in ISP20 (prev 0.5)
     2: 9.68,
     3: 9.68,
     4: 3.8,
@@ -277,11 +277,11 @@ DEFAULT_FUEL_PRICE = {
     8: 9.68,
     16: 9.68,
     19: 9.68,
-    28: 3.5,
-    29: 0.62,
-    34: 0.59,
-    35: 11.9,
-    36: 9.68
+    28: 3.01, # New black coal price varies all states over time. NQLD seems to stay fairly constant. Ave all = $3.01 (prev 3.5)
+    29: 0.67, # Latrobe valley new brown coal = 0.67 (prev 0.62)
+    34: 0.53, #New entrant biomass -> same for all regions for all years in ISP20 (prev 0.59)
+    35: 11.9, #Same pattern as CCGT. Ave all = 12.88.
+    36: 9.68 #Costs decrease to 2020 and then steadily increase until 2030 for all regions - but vary in price. Ave all years all regions = 11.65.
 }
 
 DEFAULT_HEAT_RATE = { #GJ/MWh
@@ -476,7 +476,7 @@ DEFAULT_BUILD_LIMIT = {
         17: 1800 + 443, #900 + 270, #KP_Checked
     },
     9: {
-        11: 0 #KP_Checked
+        11: 0, #KP_Checked
         12: 1500 + 0, #105 + 0, #KP_Checked
         17: 500 + 107, #35 + 445, #KP_Checked
         30: 4000 + 0 #KP_Checked
@@ -679,10 +679,10 @@ GEN_COMMIT = {
     }
 }
 
-ALL_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-            12, 13, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36]
+ALL_TECH = [1,2,3, 4, 5, 6,7, 8,9,10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,21, 22,23,24,25, 26,27, 28, 29, 30, 31, 32, 33, 34, 35, 36] #Redundant tech = 1,3,5,7,9,10,20,22,23,24,27
 
-DISPLAY_ORDER =  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 29, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 50,51,52,53,60,61,70]
+DISPLAY_ORDER =  [2,36, 4,28, 6,29, 8,35, 11, 12,17,30, 13, 18, 14,25,31,32,21, 26,15,33, 16,19, 34, 50,51,52,53,60,61,70, 1,3,5,7,9,10,20,22,23,24,27]
+#CCGT, Black coal, brown coal, OCGT, PV, Wind, CST, Hydro, PHES, Batts, Misc, EVs, Redundant tech just in case
 GEN_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17, 18, 19, 20, 28, 29, 30, 34, 35, 36]
 RE_GEN_TECH = [1, 9, 10, 11, 12, 17, 18, 30, 34]
 DISP_GEN_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 16, 18, 19, 28, 29, 34, 35, 36]
@@ -693,11 +693,8 @@ COMMIT_TECH = [2, 3, 4, 5, 6, 7, 19, 28, 29, 36]
 HYB_TECH = [13, 22, 23]
 STOR_TECH = [14, 15, 21, 24, 25, 31, 32, 26, 27, 33]
 
-
-
-
 RETIRE_TECH = [2, 3, 4, 5, 6, 7, 8, 16, 19]
-NOBUILD_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 18, 19, 20, 21]  # 3, 5 and 7 no build due to incomplete data #KP_MODIFIED to include 10 (solar pv ffp) because its not listed in the capex db
+NOBUILD_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 18, 19, 20, 21, 22,23,24,26,27]  # 3, 5 and 7 no build due to incomplete data #KP_MODIFIED to include 10 (solar pv ffp) because its not listed in the capex db
 SYNC_TECH = [1, 2, 3, 4, 5, 6, 7, 8, 13, 15, 16, 18, 19, 34, 36]
 
 EV_TECH = [50,51,52,53,60,61,70]

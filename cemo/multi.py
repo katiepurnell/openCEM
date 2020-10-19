@@ -498,47 +498,47 @@ class SolveTemplate:
                      + "' : [zones,all_tech] gen_cap_initial stor_cap_initial hyb_cap_initial ev_cap_initial intercon_cap_initial;"
         else:
             opcap0 = '''#operating capacity for generating techs regions
-load "opencem-isp2020.cyisekdyolmb.ap-southeast-2.rds.amazonaws.com" database=opencem_input
-user=select password=select_password1 using=pymysql
+load '127.0.0.1' database=em_kp_2020
+user=root password="mEow!5678!" using=pymysql
 query="select ntndp_zone_id as zones, technology_type_id as all_tech, sum(reg_cap) as gen_cap_initial
 from capacity
 where (ntndp_zone_id,technology_type_id) in
 ''' + sql_tech_pairs(self.gentech) + '''
-and commissioning_year is NULL
+and ((commissioning_year is NULL) or (commissioning_year = 0))
 and capacity.source_id = 3
 group by zones,all_tech;" : [zones,all_tech] gen_cap_initial;
 
 # operating capacity storage techs in regions
-load "opencem-isp2020.cyisekdyolmb.ap-southeast-2.rds.amazonaws.com" database=opencem_input
-user=select password=select_password1 using=pymysql
+load '127.0.0.1' database=em_kp_2020
+user=root password="mEow!5678!" using=pymysql
 query="select ntndp_zone_id as zones, technology_type_id as all_tech, sum(reg_cap) as stor_cap_initial
 from capacity
 where (ntndp_zone_id,technology_type_id) in
 ''' + sql_tech_pairs(self.stortech) + '''
-and commissioning_year is NULL
+and ((commissioning_year is NULL) or (commissioning_year = 0))
 and capacity.source_id = 3
 group by zones,all_tech;" : [zones,all_tech] stor_cap_initial;
 
 # operating capacity for hybrid techs in regions
-load "opencem-isp2020.cyisekdyolmb.ap-southeast-2.rds.amazonaws.com" database=opencem_input
-user=select password=select_password1 using=pymysql
+load '127.0.0.1' database=em_kp_2020
+user=root password="mEow!5678!" using=pymysql
 query="select ntndp_zone_id as zones, technology_type_id as all_tech, sum(reg_cap) as hyb_cap_initial
 from capacity
 where (ntndp_zone_id,technology_type_id) in
 ''' + sql_tech_pairs(self.hybtech) + '''
-and commissioning_year is NULL
+and ((commissioning_year is NULL) or (commissioning_year = 0))
 and capacity.source_id = 3
 group by zones,all_tech;" : [zones,all_tech] hyb_cap_initial;
 
 # operating capacity for ev techs in regions
 # N.B. Taking the openCEM hosted db for this to set initial EV capacity as 0 which is approximately correct in 2020.
-load "opencem-isp2020.cyisekdyolmb.ap-southeast-2.rds.amazonaws.com" database=opencem_input
-user=select password=select_password1 using=pymysql
+load '127.0.0.1' database=em_kp_2020
+user=root password="mEow!5678!" using=pymysql
 query="select ntndp_zone_id as zones, technology_type_id as all_tech, sum(reg_cap) as ev_cap_initial
 from capacity
 where (ntndp_zone_id,technology_type_id) in
 ''' + sql_tech_pairs(self.evtech) + '''
-and commissioning_year is NULL
+and ((commissioning_year is NULL) or (commissioning_year = 0))
 and capacity.source_id = 3
 group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
 
@@ -643,6 +643,7 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
                     & (capacity['zone'].isin(self.zones))
                 ]
                 if not cap.empty:
+                    cap = cap.groupby(by=['zone', 'tech']).sum().reset_index() # Jose had added this September 20
                     # TODO reject entries for techs that are not in techs_in_zones
                     exogenous_capacity += '# Exogenous capacity entry ' + key + '\n'
                     exogenous_capacity += 'param ' + key + ':=\n'
@@ -679,6 +680,7 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
                     & (capacity['zone_dest'].isin(self.zones))
                     ]
                 if not cap.empty:
+                    cap = cap.groupby(by=['zone_source', 'zone_dest']).sum().reset_index() #Jose added this September 20
                     # remove entries that violate intercon link list
                     for row in cap.itertuples():
                         if row.zone_dest not in self.intercons[row.zone_source]:
