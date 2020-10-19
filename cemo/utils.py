@@ -861,7 +861,20 @@ def _print_retirements(instance):
                     si_format(techtotal[idx.index(j)] * 1e6, precision=1)
                 ))
 
-
+# def _print_cap_per_zone(instance):
+#     tname = _get_textid('technology_type')
+#     hours = float(len(instance.t))
+#     gentechtotal = [0] * len(instance.all_tech)
+#     techperz = [0] * len(instance.all_tech)
+#     idx = list(instance.all_tech)
+#     for z in instance.zones:
+#         print(" ZONE: {}".format(z))
+#         for t in instance.gen_tech_per_zone[z]: #KP_ADDED
+#             gentechtotal[idx.index(e)] += value(instance.gen_cap_op[z, t])
+#
+#             print("TECH %s:   Cap: %sWh" % (t,si_format(value(instance.gen_cap_op[z, t]) * 1e6, precision=2)))
+#
+#             techperz[idx.index(t)] += 1
 
 def plotcluster(cluster, row=3, col=4, ylim=None, show=False):  # pragma: no cover
     '''Plot cluster result from full set of weeks, cluster weeks and weights'''
