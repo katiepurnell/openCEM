@@ -766,6 +766,13 @@ def cost_v2g_payments(model):
               for e in model.ev_tech_per_zone[z] for t in model.t)
         )
 
+# def cost_smart_payments(model):
+#     return model.year_correction_factor * (
+#         sum(model.cost_ev_smart_vom[e] * model.ev_smart_charge[z, e, t]
+#               for z in model.zones
+#               for e in model.ev_tech_per_zone[z] for t in model.t)
+#         )
+
 
 def cost_fuel_non_flexible(model, zone, tech, time):
     '''Fuel cost for non flexible generators.
@@ -808,7 +815,7 @@ def system_cost(model):
     return cost_capital(model) + cost_repayment(model)\
         + cost_fixed(model) + cost_unserved(model) + cost_operating(model)\
         + cost_trans_build(model) + cost_trans_flow(model) + cost_emissions(model)\
-        + cost_retirement(model) + cost_v2g_payments(model)
+        + cost_retirement(model) + cost_v2g_payments(model)# + cost_smart_payments(model)
 
 
 def obj_cost(model):
@@ -816,5 +823,5 @@ def obj_cost(model):
     return (cost_capital_model(model)
             + cost_fixed(model) + cost_unserved(model) + cost_operating(model)
             + cost_trans_build_model(model)
-            + cost_trans_flow(model) + cost_emissions(model) + cost_v2g_payments(model)
+            + cost_trans_flow(model) + cost_emissions(model) + cost_v2g_payments(model) + cost_smart_payments(model)
             + cost_retirement_model(model) + cost_shadow(model)) / model.year_correction_factor

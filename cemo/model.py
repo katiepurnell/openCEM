@@ -16,7 +16,7 @@ from cemo.initialisers import (init_cap_factor, init_cost_retire,
                                init_default_fuel_emit_rate,
                                init_default_fuel_price, init_default_heat_rate,
                                init_default_lifetime, init_fcr,
-                               init_gen_build_limit, init_hyb_charge_hours, #init_gen_build_limit_region, 
+                               init_gen_build_limit, init_hyb_charge_hours, #init_gen_build_limit_region,
                                init_hyb_col_mult, init_intercon_build_cost,
                                init_ev_rt_eff,
                                init_ev_charge_rate,  init_ev_batt_size, init_ev_trans_trace,
@@ -219,6 +219,7 @@ class CreateModel():
         self.m.cost_ev_fom = Param(self.m.ev_tech)
         # Variable operating costs ev
         self.m.cost_ev_vom = Param(self.m.ev_tech)
+        # self.m.cost_ev_smart_vom = Param(self.m.ev_tech)
 
         # Technology lifetime in years
         self.m.all_tech_lifetime = Param(

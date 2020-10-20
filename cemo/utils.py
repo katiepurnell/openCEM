@@ -14,6 +14,7 @@ import numpy as np
 from pyomo.environ import value
 from si_prefix import si_format
 import pandas as pd
+from pathlib import Path
 
 import cemo.const
 import cemo.rules
@@ -155,7 +156,6 @@ def save_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
                                                  for t in inst.t))
             nperz[idx.index(h)] += 1
 
-
     df = pd.DataFrame()
     df['Nem Cap Total'] = [sum(techtotal)]
     df['Nem Disp Total'] = [sum(disptotal)]
@@ -221,52 +221,61 @@ def save_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
     #             df["LCOE Cost" + str(tname[e])] = [locale.currency(value(cemo.rules.cost_lcoe(inst, e)))]
     df.to_csv(results_dir + out  +'/results/' +out+'_results_'+str(yearyear)+'.csv')
 
-#KP_TO_PRINT -> zone capacity per tech
 def save_cap_zone_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
     tname = _get_textid('technology_type')
     rname = _get_textid('region')
-    hours = float(len(inst.t))
     techtotal = [0] * len(inst.all_tech)
-    disptotal = [0] * len(inst.all_tech)
-    capftotal = [0] * len(inst.all_tech)
     nperz = [0] * len(inst.all_tech)
     idx = list(inst.all_tech)
+
+    # Create separate xlsx tab per zone with capacity/technology as columns
+    gen_fn_xlsx = "1_"+out + "_"+ str(yearyear)+ "_generation_capacity_per_zone.xlsx"
     for z in inst.zones:
-        for n in inst.gen_tech_per_zone[z]:
-            techtotal[idx.index(n)] += value(inst.gen_cap_op[z, n])
-            disptotal[idx.index(n)] += value(sum(inst.gen_disp[z, n, t]
-                                                 for t in inst.t))
-            capftotal[idx.index(n)] += value(sum(inst.gen_cap_factor[z, n, t]
-                                                 for t in inst.t))
-            nperz[idx.index(n)] += 1
-        for s in inst.stor_tech_per_zone[z]:
-            techtotal[idx.index(s)] += value(inst.stor_cap_op[z, s])
-            disptotal[idx.index(s)] += value(sum(inst.stor_disp[z, s, t]
-                                                 for t in inst.t))
-            capftotal[idx.index(s)] += 0.5 * hours
-            nperz[idx.index(s)] += 1
+        df = pd.DataFrame() # dataframe per zone
+        for j in inst.all_tech:
+            for n in inst.gen_tech_per_zone[z]:
+                techtotal[idx.index(n)] += value(inst.gen_cap_op[z, n])
+                # df['Capcity_'+str(tname[j])] = value(inst.gen_cap_op[z, n]) #[techtotal[idx.index(j)] * 1e6]
+                nperz[idx.index(n)] += 1
+            for s in inst.stor_tech_per_zone[z]:
+                techtotal[idx.index(s)] += value(inst.stor_cap_op[z, s])
+                # df['Capcity_'+str(tname[j])] = value(inst.stor_cap_op[z, s])
+                nperz[idx.index(s)] += 1
+            for h in inst.hyb_tech_per_zone[z]:
+                techtotal[idx.index(h)] += value(inst.hyb_cap_op[z, h])
+                # df['Capcity_'+str(tname[j])] = value(inst.hyb_cap_op[z, h])
+                nperz[idx.index(h)] += 1
+        # print(df)
+        for j in inst.all_tech:
+            if techtotal[idx.index(j)] > 0:
+                df['Capcity_'+str(tname[j])] = [techtotal[idx.index(j)] * 1e6]
 
-        for h in inst.hyb_tech_per_zone[z]:
-            techtotal[idx.index(h)] += value(inst.hyb_cap_op[z, h])
-            disptotal[idx.index(h)] += value(sum(inst.hyb_disp[z, h, t]
-                                                 for t in inst.t))
-            capftotal[idx.index(h)] += value(sum(inst.hyb_cap_factor[z, h, t]
-                                                 for t in inst.t))
-            nperz[idx.index(h)] += 1
+        df.to_csv(results_dir + out  +'/results/' + "1_"+out + "_"+ str(yearyear)+ "_generation_capacity_z"+str(z)+".csv")
 
+    return
+def save_intercon_cap_zone_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    intercontotal = [0] * len(inst.intercons_in_zones)
+    interconperz = [0] * len(inst.intercons_in_zones)
+    idx = list(inst.intercons_in_zones)
 
-    df = pd.DataFrame()
-    df['Nem Cap Total'] = [sum(techtotal)]
-    df['Nem Disp Total'] = [sum(disptotal)]
+    # Create separate xlsx tab per zone with capacity/technology as columns
+    df2 = pd.DataFrame() # dataframe per zone
+    for z in inst.zones:
+        for dest in inst.intercon_per_zone[z]:
+            name = "z"+str(z)+"_d"+str(dest)
+            intercontotal[idx.index((z,dest))] = value(inst.intercon_cap_op[z, dest]) # intercon_cap_op[zone_source, zone_dest]
+            interconperz[idx.index((z,dest))] += 1
 
-    for j in inst.all_tech:
-        if techtotal[idx.index(j)] > 0:
-            df['Capcity'+str(tname[j])] = [techtotal[idx.index(j)] * 1e6]
-            df['dispatch'+str(tname[j])] = [disptotal[idx.index(j)] * 1e6]
-            df['avg cap factor'+str(tname[j])] = [disptotal[idx.index(j)] / hours / techtotal[idx.index(j)]* 1e3]
+        for dest in inst.intercon_per_zone[z]:
+            if intercontotal[idx.index((z,dest))] > 0:
+                name = "z"+str(z)+"_d"+str(dest)
+                df2['Capcity_'+str(name)] = [intercontotal[idx.index((z,dest))] * 1e6]
 
-    df.to_csv(results_dir + out  +'/results/' +out+'_cap_results_'+str(yearyear)+'.csv')
+    df2.to_csv(results_dir + out  +'/results/' + "1_"+out + "_"+ str(yearyear)+ "_transmission_capacity.csv")
 
+    return
 
 def plotcapacity(instance, out,yearyear):  # pragma: no cover
     """ Stacked plot of capacities
@@ -806,6 +815,8 @@ def printstats(instance,scen_name,yearyear):
     plotcapacity(instance, scen_name, instance.name)
 
     plot_evs(instance,scen_name,yearyear)
+    save_cap_zone_results(instance,scen_name,yearyear)
+    save_intercon_cap_zone_results(instance,scen_name,yearyear)
 
 
     print("End of results for %s" % instance.name, flush=True)
@@ -861,20 +872,6 @@ def _print_retirements(instance):
                     si_format(techtotal[idx.index(j)] * 1e6, precision=1)
                 ))
 
-# def _print_cap_per_zone(instance):
-#     tname = _get_textid('technology_type')
-#     hours = float(len(instance.t))
-#     gentechtotal = [0] * len(instance.all_tech)
-#     techperz = [0] * len(instance.all_tech)
-#     idx = list(instance.all_tech)
-#     for z in instance.zones:
-#         print(" ZONE: {}".format(z))
-#         for t in instance.gen_tech_per_zone[z]: #KP_ADDED
-#             gentechtotal[idx.index(e)] += value(instance.gen_cap_op[z, t])
-#
-#             print("TECH %s:   Cap: %sWh" % (t,si_format(value(instance.gen_cap_op[z, t]) * 1e6, precision=2)))
-#
-#             techperz[idx.index(t)] += 1
 
 def plotcluster(cluster, row=3, col=4, ylim=None, show=False):  # pragma: no cover
     '''Plot cluster result from full set of weeks, cluster weeks and weights'''

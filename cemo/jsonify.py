@@ -158,6 +158,8 @@ def jsonify(inst, year):
                 fill_scalar_key_param(inst.cost_ev_fom),
                 inst.cost_ev_vom.name:
                 fill_scalar_key_param(inst.cost_ev_vom),
+                # inst.cost_ev_smart_vom.name:
+                # fill_scalar_key_param(inst.cost_ev_smart_vom),
                 inst.all_tech_lifetime.name:
                 fill_scalar_key_param(inst.all_tech_lifetime),
                 inst.fixed_charge_rate.name:

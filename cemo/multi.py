@@ -579,6 +579,7 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
             'cost_hyb_vom': 'tech',
             'cost_ev_fom': 'tech',
             'cost_ev_vom': 'tech',
+            # 'cost_ev_smart_vom': 'tech',
             'cost_stor_fom': 'tech',
             'cost_stor_vom': 'tech'}
         if self.custom_costs is not None:
