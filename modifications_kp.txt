@@ -4,6 +4,12 @@ Katelyn Purnell
 python msolve.py s2_nsw_evs_uncontrolled.cfg --solver=gurobi -t
 opencem
 
+
+MYSQLDUMP COMMAND: mysqldump -h opencem-isp2020.cyisekdyolmb.ap-southeast-2.rds.amazonaws.com -u select -pselect_password1 --single-transaction --column-statistics=0 --databases opencem_input --tables demand_scenario |mysql -h localhost -u root -pmEow!5678! em_kp_2020 -> doesnt work for foregin keys (i.e. region_id shared between multiple tables....) Trying to get around it by exporting & importing separately.... mysqldump -h opencem-isp2020.cyisekdyolmb.ap-southeast-2.rds.amazonaws.com -u select -pselect_password1 --single-transaction --column-statistics=0 --databases opencem_input --tables demand_and_rooftop_traces > "E:/OneDrive - UNSW/PhD/Modelling/openCEMKP/database local replica october 2020/demand_and_rooftop_traces.sql"
+restoring: mysql -u root -pmEow!5678! em_kp_2020 < "E:/OneDrive - UNSW/PhD/Modelling/openCEMKP/database local replica october 2020/demand_and_rooftop_traces.sql"
+TO OPEN MYSQL CONSOLE: mysql -h localhost -u root -pmEow!5678!
+
+
 Master pulled 11/08/20. Running with Gurobi solver.
 Key assumptions / limitations:
 1. No initial EV capacity in 2020 for any mode -> seems largely reasonable given extremely small AU uptake and almost no impact on AEMO demand traces at this time.

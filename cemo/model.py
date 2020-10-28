@@ -57,6 +57,7 @@ def model_options(**kwargs):
               'nem_disp_ratio': True,
               'v2g_enabled': False,
               'smart_enabled': False,
+              'smart_fit': False,
               'ev_level_floor_soc': False,
               'nem_re_disp_ratio': False,
               'build_intercon_manual': False}
@@ -219,7 +220,7 @@ class CreateModel():
         self.m.cost_ev_fom = Param(self.m.ev_tech)
         # Variable operating costs ev
         self.m.cost_ev_vom = Param(self.m.ev_tech)
-        # self.m.cost_ev_smart_vom = Param(self.m.ev_tech)
+        self.m.cost_ev_smart_vom = Param(self.m.ev_tech)
 
         # Technology lifetime in years
         self.m.all_tech_lifetime = Param(
@@ -232,6 +233,8 @@ class CreateModel():
         self.m.percent_smart_enabled = Param(default=0.5)
         # EV Fleet Batt Level Floor
         self.m.ev_level_floor = Param(default=0.2)
+        # % Fleet Smart EV Payment method
+        self.m.smart_fit_method = Param(default=1) # Defaults to FiT
 
         # Generator tech fixed charge rate
         self.m.fixed_charge_rate = Param(self.m.all_tech, initialize=init_fcr)

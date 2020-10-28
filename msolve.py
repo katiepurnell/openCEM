@@ -96,13 +96,21 @@ X = SolveTemplate(
     templatetest=args.templatetest
 )
 
+# Print starting time & scenario name
+now = datetime.datetime.now()
+print("\n STARTING SCENARIO {} at {}".format(SIM_DIR,now.strftime('%Y-%m-%d %H:%M:%S')))
+
 # instruct the solver to launch the multi year simulation
-print(
-    "openCEM msolve.py: Runtime %s (pre solver)"
-    % str(datetime.timedelta(seconds=(time.time() - start_time)))
-)
+# print(
+#     "openCEM msolve.py: Runtime %s (pre solver)"
+#     % str(datetime.timedelta(seconds=(time.time() - start_time)))
+# )
 X.solve()
-print(
-    "openCEM msolve.py: Runtime %s (post solver)"
-    % str(datetime.timedelta(seconds=(time.time() - start_time)))
-)
+# print(
+#     "openCEM msolve.py: Runtime %s (post solver)"
+#     % str(datetime.timedelta(seconds=(time.time() - start_time)))
+# )
+
+# Print starting time & scenario name
+finish = datetime.datetime.now()
+print("SCENARIO {} FINISHED at {}. Took {}".format(SIM_DIR,finish.strftime('%Y-%m-%d %H:%M:%S'),str(datetime.timedelta(seconds=(time.time() - start_time)))))
