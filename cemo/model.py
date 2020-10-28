@@ -34,7 +34,7 @@ from cemo.rules import (ScanForHybridperZone, ScanForEVperZone, ScanForStoragepe
                         con_gen_cap, con_hyb_cap, con_hyb_flow_lim,
                         con_hyb_level_max, con_hyb_reserve_lim, con_hybcharge,
                         con_ev_cap, con_evcharge, con_maxchargeev, con_minchargeev, con_ev_flow_lim, con_ev_trans_disp,
-                        con_ev_reserve_lim, con_ev_v2g, con_ev_level_max, con_ev_num_vehicles,
+                        con_ev_reserve_lim, con_ev_v2g, con_ev_level_max, con_ev_num_vehicles, con_ev_num_smart_participating_vehicles,
                         con_intercon_cap, con_ldbal, con_max_mhw_per_zone,
                         con_max_mwh_nem_wide, con_max_trans, con_maxcap,
                         con_maxcharge, con_maxchargehy, con_min_load_commit,
@@ -453,6 +453,7 @@ class CreateModel():
         self.m.ev_dumb_charge = Var(self.m.ev_tech_in_zones,  self.m.t, within=NonNegativeReals) #KP_MODIFIED
         self.m.ev_smart_charge = Var(self.m.ev_tech_in_zones,  self.m.t, within=NonNegativeReals) #KP_MODIFIED
         self.m.ev_num_vehs = Var(self.m.ev_tech_in_zones, within=NonNegativeReals) #number of installed vehicles
+        self.m.ev_num_smart_part = Var(self.m.ev_tech_in_zones, within=NonNegativeReals) #number of vehicles participating in smart charging program
 
 
 
@@ -594,6 +595,8 @@ class CreateModel():
         self.m.con_ev_flow_lim = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_flow_lim)
         # RULE 4 - BATTERY RESERVE LIMIT # Limit ev reserve capacity to be within storage level
         self.m.con_ev_reserve_lim = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_reserve_lim)
+        # RULE 12 - NUMBER OF VEHICLES PARTICIPATING IN SMART CHARGING PROGRAM
+        self.m.con_ev_num_smart_participating_vehicles = Constraint(self.m.ev_tech_in_zones, rule=con_ev_num_smart_participating_vehicles)
 
 
         ############################################################

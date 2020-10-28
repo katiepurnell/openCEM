@@ -440,14 +440,23 @@ def con_ev_dumb_charge(model, z, e, t): # in MWh, hourly basis #KP_MODIFIED_0709
 # RULE 10: Set smart charging profile - absolute limit of smart charging (max charge rate * num veh * prop connected * prop willing to participate) -> efficiency ISN'T included here because this is the maximum the grid can provide. Need to include in the load balance for the battery.
 def con_ev_smart_charge(model,z,e,t):
     if e in model.smart_charge_tech:
-        return model.ev_smart_charge[z,e,t] <= model.ev_num_vehs[z,e] * model.ev_connected[z,e, t] * model.ev_max_charge_rate[e] * model.percent_smart_enabled # / model.ev_rt_eff[e]
+        if model.smart_fit_method == 1: #FiT Charging
+            return model.ev_smart_charge[z,e,t] <= model.ev_num_vehs[z,e] * model.ev_connected[z,e, t] * model.ev_max_charge_rate[e] * model.percent_smart_enabled # / model.ev_rt_eff[e]
+        elif model.smart_fit_method == 0: #Yearly payment to participate
+            return model.ev_smart_charge[z,e,t] <= model.ev_num_smart_part[z,e] * model.ev_connected[z,e, t] * model.ev_max_charge_rate[e]
     else: #KP_MODIFIED_010920 to include no smart charging for freight
         return model.ev_smart_charge[z,e,t] == 0
-
 
 # RULE 11: Number of vehicles
 def con_ev_num_vehicles(model,z,e): #KP_MODIFIED_010920 removed t for this rule
     return model.ev_num_vehs[z,e] == model.ev_cap_op[z, e] / model.ev_batt_size[e]
+
+# RULE 13: Number of vehicles participating in smart charging program (yearly)
+def con_ev_num_smart_participating_vehicles(model,z,e): #KP_MODIFIED_010920 removed t for this rule
+    if model.smart_fit_method == 0:
+        return model.ev_num_smart_part[z,e] <= model.ev_num_vehs[z,e] * model.percent_smart_enabled
+    elif model.smart_fit_method == 1: #FiT Charging
+        return model.ev_num_smart_part[z,e] == 0
 
 # RULE 8: Set charging level to trace if dumb charging, and limit to amount of vehicles connected and the charge rate otherwise
 def con_ev_level_max(model, z, e, t): #From the perspective of the grid - total dumb charging (already includes losses) and total smart - from grids perspective not cars.
@@ -772,14 +781,14 @@ def cost_smart_payments(model):
         return 0
     else:
         if model.smart_fit_method == 0: #yearly one off payment to each vehicle owner
-            print("Yearly one off payments")
-            return model.percent_smart_enabled * (
-                sum(model.cost_ev_smart_vom[e] * model.ev_num_vehs[z,e]
+            # print("Yearly one off payments")
+            # No need to multiply by year correction factor as this is a one off payment for the year
+            return (sum(model.cost_ev_smart_vom[e] * model.ev_num_smart_part[z,e]
                       for z in model.zones
-                      for e in model.ev_tech_per_zone[z] for t in model.t)
+                      for e in model.ev_tech_per_zone[z])
                 )
         elif model.smart_fit_method == 1:#FiT per kWh smart charged
-            print("Smart FiT Payments")
+            # print("Smart FiT Payments")
             return model.year_correction_factor * (
                 sum(model.cost_ev_smart_vom[e] * model.ev_smart_charge[z, e, t]
                       for z in model.zones

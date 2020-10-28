@@ -175,6 +175,7 @@ def save_ev_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
     chargetotal = [0] * len(inst.all_tech)
     transtotal = [0] * len(inst.all_tech)
     numvehtotal = [0] * len(inst.all_tech)
+    numsmartvehtotal = [0] * len(inst.all_tech)
     nperz = [0] * len(inst.all_tech)
     idx = list(inst.all_tech)
     for z in inst.zones:
@@ -191,6 +192,7 @@ def save_ev_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
             transtotal[idx.index(e)] += value(sum(inst.ev_disp_transport[z, e, t]
                                                  for t in inst.t))
             numvehtotal[idx.index(e)] += value(inst.ev_num_vehs[z,e])
+            numsmartvehtotal[idx.index(e)] += value(inst.ev_num_smart_part[z,e])
             nperz[idx.index(e)] += 1
 
     df = pd.DataFrame()
@@ -203,6 +205,7 @@ def save_ev_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
             df['Charge_MWh_'+str(tname[j])] = [chargetotal[idx.index(j)]]
             df['Trans_MWh_'+str(tname[j])] = [transtotal[idx.index(j)]]
             df['Num_Veh_'+str(tname[j])] = [numvehtotal[idx.index(j)]]
+            df['Num_Veh_Smart_Part'+str(tname[j])] = [numsmartvehtotal[idx.index(j)]]
             # df['Num_Veh_'+str(tname[j])] = [numvehtotal[idx.index(j)]]
             # df['avg cap factor'+str(tname[j])] = [disptotal[idx.index(j)] / hours / techtotal[idx.index(j)]* 1e3]
 

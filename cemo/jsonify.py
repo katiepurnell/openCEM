@@ -274,6 +274,8 @@ def jsonify(inst, year):
                 fill_complex_var(inst.ev_disp_transport),
                 inst.ev_num_vehs.name:
                 fill_complex_var(inst.ev_num_vehs),
+                inst.ev_num_smart_part.name:
+                fill_complex_var(inst.ev_num_smart_part),
                 inst.ev_charge.name:
                 fill_complex_var(inst.ev_charge),
 
