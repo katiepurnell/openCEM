@@ -1,0 +1,1658 @@
+[33mcommit a0c68bbc9823d8720b76b1108662832137782ae6[m[33m ([m[1;36mHEAD -> [m[1;32mevs_2020_ISP[m[33m)[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Mon Nov 2 23:49:53 2020 +1100
+
+    Fix of uncontrolled charging lower limit & updated report format.
+
+[33mcommit b4fc66ec26d65331751978bf7462e43571e86f2f[m[33m ([m[1;31morigin/evs_2020_ISP[m[33m)[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Tue Oct 20 16:45:49 2020 +1100
+
+    Intercon capacity and generation export working fine
+
+[33mcommit 1e6be879fb7ba6200b3424521568c0484d492bf4[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Mon Oct 19 17:10:54 2020 +1100
+
+    ISP2020 Working
+
+[33mcommit 741985d69875b4305a2089b08891d960ce8187ce[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Mon Oct 19 13:50:59 2020 +1100
+
+    ISP2020 Seems to be working as expected. Still need to export capacity & intercon cap changes per zone not just per region to check where things are being built.
+
+[33mcommit a5e3bd6beffd45b9419b92ced1b927ff32534dd7[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Tue Oct 13 16:35:20 2020 +1100
+
+    Changing constants aligned with ISP2020 and model (to include build limits per region in addition to per zone - n.b. have no checked if this works yet). Not finished yet.
+
+[33mcommit 3ad6f1a75116dab3a5042d4a550e77c3ec89d6a3[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Fri Oct 2 15:46:01 2020 +1000
+
+    Exports transmission flows to csv
+
+[33mcommit e5e64d8e61abf53613dc9b88082e1601ad55d3b7[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Fri Sep 25 18:10:45 2020 +1000
+
+    ISP2020 Working as long as you don't include T1 (Biomass) - need to update the additional_techs.csv file for ISP2020 and double check all the numbers
+
+[33mcommit 797ebeaa8101e3dc01bb3ada9db89ce12e543e6a[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Mon Sep 21 17:30:16 2020 +1000
+
+    Basic changes made for ISP2020 in .dat, consts etc. Not yet working.
+
+[33mcommit 5dc9b5f030748fc4e7ad798eccb0f4b60e0324be[m[33m ([m[1;31morigin/master_evs[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmaster[m[33m)[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Mon Sep 21 11:18:06 2020 +1000
+
+    Full runs work with csv dispatch file exports. Issue with full runs + more than one region when using updated .dat file template - fix me later. For now have reverted when doing all NEM.
+
+[33mcommit 98556eab4429f4831885a95483eea3e38b41e1f1[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Fri Sep 18 16:00:04 2020 +1000
+
+    EV Fleet floor limit working - put in the cfg file as per evs_test_smart_v2g_limit
+
+[33mcommit 99f765acb20f7e7f26ad4ceaa843187eb594ee1f[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Fri Sep 18 12:50:51 2020 +1000
+
+    EVs work - no limit for V2G (can discharge the fleet's battery entirely).
+
+[33mcommit fe605df3fee7231107472895274da904a610ea6d[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Fri Sep 11 18:04:47 2020 +1000
+
+    Base case no evs - results saving to scenarios/SCENARIO_NAME/results. Graphs plotting.
+
+[33mcommit 5001dedd40966b977afce01c4176a6aa7f7ec1e7[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Fri Sep 11 16:11:02 2020 +1000
+
+    Base case - works. Had to modify multi to work (Path + str wasn't updated like the others). python msolve.py scenario01.cfg -t --solver=gurobi
+
+[33mcommit 38d46e8eb3404e9306e51f4c945f328cd78d043b[m
+Author: katiepurnell <kpurnell0@gmail.com>
+Date:   Fri Sep 11 13:11:42 2020 +1000
+
+    Added test cfg & dat files as well as error & modification logs
+
+[33mcommit c1c86359f28c39914e2de599d2ef0d068807cb38[m[33m ([m[1;32mlist[m[33m)[m
+Merge: 4478d90 70794c7
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Tue Sep 1 04:46:46 2020 +0000
+
+    Merge branch 'fix/wrkdir-path-in-multi' into 'master'
+    
+    [fix] path to save json file to wrkdir
+    
+    Closes #7
+    
+    See merge request analytics/openCEM!12
+
+[33mcommit 70794c76eb85d0d6257ca415f0112ffdf776d1da[m
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Tue Sep 1 14:44:47 2020 +1000
+
+    [fix] path to save json file to wrkdir
+
+[33mcommit 4478d90d6c5253013ef4c861a281b5d3305f966b[m
+Merge: 6fc46e1 1cc0fb5
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Tue Sep 1 04:14:00 2020 +0000
+
+    Merge branch '4-infeasibility-on-exogenous-capacity' into 'master'
+    
+    Resolve "Infeasibility on exogenous capacity"
+    
+    Closes #3 and #4
+    
+    See merge request analytics/openCEM!10
+
+[33mcommit 1cc0fb502ec8f20179e848034796e978c2f5fcff[m
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Tue Sep 1 14:00:07 2020 +1000
+
+    [fix] adjustment of exogenous capacity to observe build limits
+
+[33mcommit 6fc46e1d540536a63fced88cf24bc88800dc2f81[m
+Merge: 227c0c3 b1a3064
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Tue Sep 1 03:29:08 2020 +0000
+
+    Merge branch '2-migrate-to-pathlib' into 'master'
+    
+    Resolve "Migrate to pathlib"
+    
+    Closes #2
+    
+    See merge request analytics/openCEM!9
+
+[33mcommit b1a30641ba4396ad4aa84b4888743b4e1e0bef5b[m
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Tue Sep 1 10:25:45 2020 +1000
+
+    Test updating requirements and dockerfile
+
+[33mcommit 35880a5569690be32dba3a19cb92826f50903eb8[m
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Fri Aug 28 17:05:15 2020 +1000
+
+    refactored conftest to use pathlib
+
+[33mcommit 6cd64e95f8bc7bacc752cc51b06cad7cc918b142[m
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Fri Aug 28 16:58:39 2020 +1000
+
+    updated msolve to use pathlib
+
+[33mcommit 462b25f47d4518d6ec4989efa04d9a01d8517763[m
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Fri Aug 28 16:54:32 2020 +1000
+
+    refactored multi model to use pathlib
+
+[33mcommit 2adcf490e051e601085bee6d1cadc34e8cbd368e[m
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Fri Aug 28 16:29:47 2020 +1000
+
+    refactored cluster module to use pathlib
+
+[33mcommit 227c0c3438c5c96f9ac57709d459f5dca7ff0a1a[m
+Merge: 6d66af5 e65c293
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Mon Aug 24 03:56:49 2020 +0000
+
+    Merge branch 'bug/nem_disp_ratio' into 'master'
+    
+    Fix for nem_disp_ratio issue #20
+    
+    See merge request analytics/openCEM!8
+
+[33mcommit e65c293db620b98f0737ac309d85c410ccfa694b[m
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Mon Aug 24 13:52:46 2020 +1000
+
+    Fix for nem_disp_ratio issue #20
+
+[33mcommit 6d66af52bd2f22e3aeed22eabf5276411af76777[m
+Merge: b6bd8fd 540b4ab
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Wed Apr 15 00:10:18 2020 +0000
+
+    Merge branch 'dev_remove_superfluous_text' into 'master'
+    
+    remove superfluous text
+    
+    See merge request analytics/openCEM!4
+
+[33mcommit 540b4ab39c6eb71a10bb11a3d5a7d98794cae6eb[m
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Wed Apr 15 00:10:18 2020 +0000
+
+    remove superfluous text
+
+[33mcommit b6bd8fd8488dddd6a934bce5b7b04a542c533fb9[m
+Merge: 967c1e5 b38c18f
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 15 09:33:30 2020 +1000
+
+    Merge branch 'master' of github.com:openCEMorg/openCEM
+
+[33mcommit 967c1e50fd69c8135c8afeded4e8e48e84ca2d56[m
+Author: Jose Zapata <jzapata@itpau.com.au>
+Date:   Tue Apr 14 23:25:40 2020 +0000
+
+    Dev gitlab docker
+
+[33mcommit 0eda74f98b47d932a81392c3d048e16f3ac82c9f[m
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Mon Mar 30 23:39:54 2020 +1100
+
+    Dev dependencies (#17)
+    
+    * Updated pyomo requirement to 5.6.8
+    
+    * Updated test pickle to match pyomo 5.6.8
+    
+    * Updated travis CI file to match latest conda instructions
+
+[33mcommit b38c18f12b1a279c8bf4a37762a6cca36bf8f272[m
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Mon Mar 30 23:39:54 2020 +1100
+
+    Dev dependencies (#17)
+    
+    * Updated pyomo requirement to 5.6.8
+    
+    * Updated test pickle to match pyomo 5.6.8
+    
+    * Updated travis CI file to match latest conda instructions
+
+[33mcommit bf9159e0d008b3f39ebf5189e8fa1beb8c43075d[m
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Mon Mar 30 22:01:02 2020 +1100
+
+    Dev man trans (#9)
+    
+    * [model] Add model option for manual transmission which sets interconnectors var bounds to zero
+    
+    * [multi] Validated and tested cfg input for true/false manual transmission
+    
+    * pycodestyle enhancements
+    
+    * Implemented a exogenous transmission interface to prescribe interconnectors
+    
+    * Small adjustment to generator capacity factor threshold
+    
+    * Adjusted template generator to generate safely in case no parameter has been prescribed
+    
+    * Fix unit tests for templates
+    
+    * Fix model_options when manual intercon_build is ommitted from config file
+    
+    * tweak to reduce memory usage if a solver insist on working in persistent mode
+    
+    * Scaling not needed for objective and constraints for unit commitment
+    
+    * Found bug in unserved energy cost and tied surplus constraint to USE cost
+    
+    * including exogenous transmission decisions in metadata
+    
+    * test using environment.yml
+    
+    * Removed Sample.cfg to avoid misleading adoption of openCEM
+    
+    * remove debugging string
+    
+    * [fix] consistent sorting of clusters
+    
+    * Pylinting and increased coverage for jsonify
+    
+    * added test for plotcluster
+    
+    * Added json files for unit tests
+
+[33mcommit 9346024c51894f20b5e4a74f46589bb459b7166b[m
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Mon Feb 10 12:29:55 2020 +1100
+
+    First draft, testing brown and black coal limits in NSW and QLD (#7)
+    
+    * [capfac]First draft, testing brown and black coal limits in NSW and QLD
+    
+    * [cluster] including a second dark doldrum week differentiating winter and summer
+    
+    * [cluster] instead of a summer doldrum, just inject the peak week squarely in the middle
+    
+    * [capfac] include capacity factor derating for biomass
+    
+    * [capfac] corrected capacity factor entries and tests
+
+[33mcommit 08f12ad671e0dd7722795c37f871972461784a20[m
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Fri Jan 24 14:30:10 2020 +1100
+
+    Dev numerical (#6)
+    
+    * Remove rewriting of test data
+    
+    * Scale emissions constraints for better numerical behaviour
+    
+    * Added test for transmission build costs
+    
+    * Change how pyomo variables are fixed to avoid large constant terms in objective function
+    
+    * Re structured objective function not to pass constant terms to solver
+    
+    * Updated utils reporting to reflect cost accounting changes
+    
+    * Updated JSON output to reflect cost accounting changes
+    
+    * pylint and docstring tweaks
+    
+    * Deprecated relaxation variable surplus
+    
+    * Updated printstats cbc test
+    
+    * Reinstating surplus variable to test a model infeasibility
+    
+    * Scaling factors for NEM wide constraints
+    
+    * Testing scaling on shadow constraints
+    
+    * Scaling factor for max mwh per zone constraint
+    
+    * Edited default cost down by an order of magnitude
+    
+    * Default capex for technologies that are not in database
+    
+    * Updating unit tests references
+    
+    * Replaced slack constraints for build actions in model
+    
+    * Wrote build actions for gen_cap_exo and ret_exo
+    
+    * Build limit adjusted
+    
+    * Removed neg variables from JSON
+    
+    * Ensure that the assignment is on the value of the Param not param as object
+    
+    * Still working on setting parameters with buildaction
+    
+    * hopefully this takes care of objective scaling
+    
+    * pesky pylint
+    
+    * jsonify mutable parameters saved as mutable
+    rules need to include exogenous retires
+    
+    * [forceweek] manually forcing bad week on model
+    
+    * Ammend changes to model from merge
+    
+    * [model] Adding explicit bounds to variables to aid solvers
+    
+    * [darkcalm] Small adjustments to dark calm changes
+    
+    * pycode style improvements
+    
+    * [rules] scaling of `_disp` variables to GWh for numerical performance
+    
+    * [tests] test json file for full instance data only
+    
+    * [model] delete exo cap constraints and replace with exo cap build actions
+    
+    * Force hourly cap factors to zero if below threshold value
+    
+    * [tests] adjust jsonify tests for sets of lists
+    
+    * [model] All variables have specific scaling bounds saved on cemo.const
+    
+    * replaced manual week injection with dunkelflaute detection
+    
+    * bunch of changes recovered from workstation
+    
+    * [tests, multi] improved coverage for auxiliary functions
+
+[33mcommit f9005501e0cede18d58a3ccaf27b6ac5fe838a0d[m
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Fri Jan 24 12:05:36 2020 +1100
+
+    Dev numerical (#2)
+    
+    * Remove rewriting of test data
+    
+    * Scale emissions constraints for better numerical behaviour
+    
+    * Added test for transmission build costs
+    
+    * Change how pyomo variables are fixed to avoid large constant terms in objective function
+    
+    * Re structured objective function not to pass constant terms to solver
+    
+    * Updated utils reporting to reflect cost accounting changes
+    
+    * Updated JSON output to reflect cost accounting changes
+    
+    * pylint and docstring tweaks
+    
+    * Deprecated relaxation variable surplus
+    
+    * Updated printstats cbc test
+    
+    * Reinstating surplus variable to test a model infeasibility
+    
+    * Scaling factors for NEM wide constraints
+    
+    * Testing scaling on shadow constraints
+    
+    * Scaling factor for max mwh per zone constraint
+    
+    * Edited default cost down by an order of magnitude
+    
+    * Default capex for technologies that are not in database
+    
+    * Updating unit tests references
+    
+    * Replaced slack constraints for build actions in model
+    
+    * Wrote build actions for gen_cap_exo and ret_exo
+    
+    * Build limit adjusted
+    
+    * Removed neg variables from JSON
+    
+    * Ensure that the assignment is on the value of the Param not param as object
+    
+    * Still working on setting parameters with buildaction
+    
+    * hopefully this takes care of objective scaling
+    
+    * pesky pylint
+    
+    * jsonify mutable parameters saved as mutable
+    rules need to include exogenous retires
+    
+    * [forceweek] manually forcing bad week on model
+    
+    * Ammend changes to model from merge
+    
+    * [model] Adding explicit bounds to variables to aid solvers
+    
+    * [darkcalm] Small adjustments to dark calm changes
+    
+    * pycode style improvements
+    
+    * [rules] scaling of `_disp` variables to GWh for numerical performance
+    
+    * [tests] test json file for full instance data only
+    
+    * [model] delete exo cap constraints and replace with exo cap build actions
+    
+    * Force hourly cap factors to zero if below threshold value
+    
+    * [tests] adjust jsonify tests for sets of lists
+    
+    * [model] All variables have specific scaling bounds saved on cemo.const
+    
+    * replaced manual week injection with dunkelflaute detection
+    
+    * bunch of changes recovered from workstation
+
+[33mcommit 869739a7b87e1d554232567cd11b80eb3833d823[m
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Wed Jan 15 16:17:10 2020 +1100
+
+    Dev/darkcalm (#1)
+    
+    * [cluster] added method to inject a cluster week to ClusterData
+    
+    * [cluster] Improved testing coverage of existing functions
+    
+    * [model] new container structure for model options
+    
+    * `emitlimit` and `nem_year_emit_limit` renamed consistently to `nem_emit_limit`
+    
+    * [cluster] refactoring to work with `model_options`
+    
+    * pylint warnings
+    
+    * [multi] refactoring to work with `model_options`
+    
+    * [tests] updating tests to work with `model_options`
+    
+    * [model] Refactored model to build in sections
+    
+    * `nem_disp_ratio` is the parameter that defines the operating reserve constraint
+    
+    * [multi] Increase coverage of template definition
+    
+    * pycodestyle changes
+    
+    * [cluster] Dark calm detection and test, uses new inst_lite data
+
+[33mcommit 8a1f386adc5a08a57546eb8486b0da5ea9d94a20[m
+Author: Jose Zapata <jotaigna@gmail.com>
+Date:   Fri Nov 8 16:31:55 2019 +1100
+
+    Scaling of coefficients to improve numerical stability of solvers
+
+[33mcommit 3b627f0bf5dd767e15f65af2af1c20f702080137[m
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Thu Nov 7 16:32:54 2019 +1100
+
+    Updated README.md
+    
+    Incorrect link to examples
+
+[33mcommit b9ff2d3f370ac311ad7c68dde8c3fa985bf68435[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Thu Oct 31 09:57:38 2019 +1100
+
+    Reverting commit `3347bd3`
+
+[33mcommit 3347bd3d0b8109aafb93cfe3f7ff48904d589596[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Thu Oct 31 09:54:36 2019 +1100
+
+    Reverted CSP to have "non dispatchable" storage
+
+[33mcommit 633d13c92e4e43498cbd1db54aff7e369a6f9885[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Sep 17 11:22:19 2019 +1000
+
+    const.py Fix dictionary index with an extra space
+
+[33mcommit 911e135e20ce9d5301daed9726ce878dc2748df1[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Sep 17 11:04:33 2019 +1000
+
+    Fix how interconnector costs are saved in JSON file
+
+[33mcommit 45b3a43a6cc02d3c59b4248e88255d9a71d0a0d8[m
+Merge: 2857d42 9cc284a
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Tue Sep 17 10:59:00 2019 +1000
+
+    Merge pull request #15 from openCEMorg/add-code-of-conduct-1
+    
+    Created CODE_OF_CONDUCT.md
+
+[33mcommit 2857d4229f772c56dbec07bd4a29db69106e3732[m
+Merge: ab66a4c 4f123a6
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Tue Sep 17 10:58:40 2019 +1000
+
+    Merge pull request #14 from openCEMorg/contribution-guidelines
+    
+    First draft of contribution guidelines
+
+[33mcommit 4f123a60dce5ddde8f46320a954a9dbac3125c3e[m
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Mon Sep 16 10:10:33 2019 +1000
+
+    First draft of contribution guidelines
+    
+    Based on Pyomo guidelines
+
+[33mcommit 9cc284af82c5641a2c8e3baf342c4e150a5a82be[m
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Mon Sep 16 09:02:57 2019 +1000
+
+    Created CODE_OF_CONDUCT.md
+    
+    Initial draft of code of conduct for the openCEM repository and community
+
+[33mcommit ab66a4c3ec33b0b0b62c85c5215935c6517ea0c1[m
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Fri Aug 30 15:06:17 2019 +1000
+
+    Updated CHANGELOG.md
+    
+    This log may become deprecated in favour of github release tracking
+
+[33mcommit 0e152faeea5762b9c57934775f105ab1d56e1e5c[m
+Merge: 2dbd984 75291db
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Fri Aug 30 14:38:35 2019 +1000
+
+    Merge pull request #13 from openCEMorg/dev/capital-servicing-data
+    
+    Dev/capital servicing data
+
+[33mcommit 75291db69fd01e7831f8f48b2e7de323b08f7c35[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Fri Aug 30 14:19:20 2019 +1000
+
+    simplified capacity reserve rule for hybrid generators
+
+[33mcommit 3d657c0e6470692a686c6f1fe4d742a5cee32d73[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Aug 29 17:10:39 2019 +1000
+
+    refactored sql_tech_list to sql_list because it is used by other sets
+
+[33mcommit 57f71890622d3788ab78e3ab06291b61c390542e[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Aug 29 17:09:58 2019 +1000
+
+    Updated test results when repayments include NEM_fleet data
+
+[33mcommit 37c03b9ba998dfb453dc2af40933889df05ac356[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Aug 29 17:09:11 2019 +1000
+
+    updated how repayment costs are reported in summary
+
+[33mcommit 790083b58ff403a32c4ccc48d4fe8cf5045f7a8c[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Aug 29 17:08:36 2019 +1000
+
+    Modified carry forward json import and export to only carry simulated part of repayments
+
+[33mcommit 38ab670ebc4e5c2681b3288262f7225e717c0c48[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Aug 29 17:06:24 2019 +1000
+
+    modified rules to account separately for build and repayment costs
+
+[33mcommit 91d89680caefa1feb247c04c8775e1a72db4572c[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Aug 29 16:59:47 2019 +1000
+
+    split carry forward costs into historical and simulated, db is hosted temporarily here until further notice
+
+[33mcommit 2a908595cafb0afa8f0ecf7a17c987531930b46e[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Aug 29 16:50:10 2019 +1000
+
+    Exposed flag to create templates with short dispatch periods for testing
+
+[33mcommit 34c77030d4dbce0d8c2da45788aaf62445a1c3c0[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Aug 29 11:23:59 2019 +1000
+
+    Updated default build lifetimes for FCR calcs
+
+[33mcommit 2dbd984fae5a7ae23c1d483dfe5c54ad859a2a7d[m
+Merge: aa8cf65 f7f1ade
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Tue Aug 27 09:42:44 2019 +1000
+
+    Merge pull request #12 from openCEMorg/dev/macos-test
+    
+    MacOS test feedback
+
+[33mcommit f7f1adec05f7a8c423fc1e8e4edc29444cf8fb48[m
+Author: James D Foster <James.Foster@csiro.au>
+Date:   Tue Aug 27 09:33:29 2019 +1000
+
+    MacOS added to list of requirements
+
+[33mcommit 24b824a5cb98a3fea8fa6ce219d0e160b659ca1f[m
+Merge: 0cf2151 aa8cf65
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Mon Aug 26 12:37:57 2019 +1000
+
+    Merge branch 'master' into dev/macos-test
+
+[33mcommit 0cf2151a11d3d854390a45cc6cf07a5c71192b46[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Aug 26 12:31:28 2019 +1000
+
+    Updated README.md to show MacOS installations are possible
+
+[33mcommit a6141f6fb5c867560903bc581f90746372e0d002[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Aug 26 12:05:02 2019 +1000
+
+    Amended utils test to work with CBC and other solvers
+
+[33mcommit aa8cf65ffc14eb77d50f7cd6713686a62d51faae[m
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Fri Aug 23 15:18:04 2019 +1000
+
+    Updated README.md
+    
+    Fixed link to issue tracker
+
+[33mcommit 66802ff3f5678a31a836e255b783a2789b6d23bb[m
+Merge: 5c133e6 59f54ab
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Fri Aug 23 15:14:38 2019 +1000
+
+    Merge pull request #9 from openCEMorg/dev/jsonify_multi_line
+    
+    Dev/jsonify multi line
+
+[33mcommit 5c133e6092f793b6b442bc8efa326cc85606ce8e[m
+Merge: 3969d69 d03f958
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Fri Aug 23 15:02:51 2019 +1000
+
+    Merge pull request #11 from openCEMorg/dev/minor_fixes
+    
+    Dev/minor fixes
+
+[33mcommit d03f9587a6e3db9afb4394bcea6ce79eeb7fdacc[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Fri Aug 23 14:55:05 2019 +1000
+
+    various pylint warnings
+
+[33mcommit 208fb36e2a6104b93c93b46c7a54f95dd9c73b28[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Fri Aug 23 14:39:18 2019 +1000
+
+    Added travis-CI build passing
+
+[33mcommit 28e669b76945c510109bafcaa3449173b3638ee6[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Fri Aug 23 14:22:57 2019 +1000
+
+    Removed unnecessary step
+
+[33mcommit 941d7abe1022fc0fec248e7ebcdb511b98345c1c[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Fri Aug 23 13:14:25 2019 +1000
+
+    Testing a Travis CI test environment
+
+[33mcommit 67ae30010b9528d95f70bc91007d51cafdb7280e[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Fri Aug 23 09:51:05 2019 +1000
+
+    Deprecated initialiser
+
+[33mcommit 0619b23940fd73eed59281b99f4b4e0472df29bd[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Aug 22 13:56:40 2019 +1000
+
+    Review and TODO's in cemo/const.py
+
+[33mcommit f22341df08fe6424c87d6558764a9ac01a516aec[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Aug 22 13:55:58 2019 +1000
+
+    Fix todo in cemo/initialisers.py line 21
+
+[33mcommit d0fa33b32769a752c3a668ed526ea0de31096114[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Aug 22 11:15:02 2019 +1000
+
+    Removing examples from main repository
+
+[33mcommit 59f54abfb4c23f2fb9a388803c90667455b9cad9[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Aug 20 14:55:16 2019 +1000
+
+    Helper functions to read one per line JSON with tests
+
+[33mcommit 38ff1b2820ac0bce05b26d25e68f2121a91670d7[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Aug 20 14:23:20 2019 +1000
+
+    Fix typo on argparse documentation
+
+[33mcommit ab04b3e9babc042247bd96ca805a73a1db41b027[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Aug 20 14:21:18 2019 +1000
+
+    Full results are saved first meta and then each year in separate lines
+
+[33mcommit ab78e498443a758f419a9d773d8279e10b62d6c9[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Aug 20 14:20:55 2019 +1000
+
+    Individual year results are saved within a year index and appended with a new line character
+
+[33mcommit 9eebfbf7ae9d5ce5de1a0645d5c6ca0d72ee9a7d[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Aug 20 14:19:25 2019 +1000
+
+    [Fix] Needed to specify lifetime of additional techs so that FCR is calculated correctly
+
+[33mcommit cc0f8fcde6c59e40079e0b0b1d7e230770d9eb2e[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Aug 20 11:04:40 2019 +1000
+
+    Refactored jsonify so that it produces an output with a year
+
+[33mcommit 3969d696f9569db9ea088774fc5eeb9803bad80a[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Aug 20 10:42:13 2019 +1000
+
+    updated tests for fix done in commit `b0aaf78`
+
+[33mcommit b0aaf786843bb8a3303d635e6c983314700a0858[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Aug 20 10:36:24 2019 +1000
+
+    Pad custom cost empty fields to prevent mishaps when uploading to ElasticSearch
+
+[33mcommit b4d96e8eaed9a7e3ebcebe3b30c44ef616a2b51f[m
+Author: James D Foster <James.Foster@csiro.au>
+Date:   Thu Aug 15 15:18:15 2019 +1000
+
+    First test on MacOS, added conda env config and passes tests on CBC and CPLEX solvers.
+
+[33mcommit 947a9d03d1610ca17a405bab3dd28967fef7d0bd[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Jul 11 16:43:50 2019 +1000
+
+    Better name for large scale phes
+
+[33mcommit 24eaf1386cda407d592b98f8fbd8fa356bef9522[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Wed Jul 10 10:33:02 2019 +1000
+
+    Temporarily disabling keepfiles for full dispatch simulations (too much space)
+
+[33mcommit 8d430ef6d165f4d711f6888b8ba3ff0936986a39[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Jul 9 16:22:14 2019 +1000
+
+    Fixed switch inadvertently left on
+
+[33mcommit f225181eaefaa15a882562e34dd01c3891289f56[m[33m ([m[1;33mtag: 0.9.5[m[33m)[m
+Merge: 3df275f cd1518d
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Tue Jul 9 15:36:41 2019 +1000
+
+    Merge pull request #8 from openCEMorg/newtech
+    
+    Enhanced treatment of coal new entrants, storage and hybrid technologies
+
+[33mcommit cd1518d2137806ea47f7872b7c0ae60c5845985a[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Jul 9 15:25:09 2019 +1000
+
+    Updating version of files for new interim release
+
+[33mcommit 4e5396d95d99af4947541c3041a2f1fe0a7759d7[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Jul 9 15:19:49 2019 +1000
+
+    Some readme adjustments
+
+[33mcommit 4544ac4b8fe814b967783db2eb5e0f1ef93e7832[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Jul 9 15:08:09 2019 +1000
+
+    Added PHES 3h, PHES 12h Bat 1H, BAT 3H and Black Coal HELE with new entrant fuel costs
+
+[33mcommit d6772f27500673aef60c8042dc897d4344b81da2[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Jul 9 13:57:15 2019 +1000
+
+    Found a loophole in the filtering of custom costs
+
+[33mcommit 9e24aad5fc7c33719cbd48887a00c31dcad4049b[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Jul 9 10:27:31 2019 +1000
+
+    ISPNeutral sample template now points to commnuity database for `hyb_cao_factor`
+
+[33mcommit bf8b57453ea1081b7a2dda7f27af56832212ee18[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 8 16:43:09 2019 +1000
+
+    refactored storage default parameters to be consistent with hybrid
+
+[33mcommit d593475a4f7bffe8d14069d2c01d05c106d2416b[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 8 16:37:54 2019 +1000
+
+    Added default values for techs 22 and 23. Refactored defaults
+
+[33mcommit 8c68893a4c8d277d976c274372af59dcb25ded07[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 8 13:37:11 2019 +1000
+
+    Tidying up TODOS and other minor details
+
+[33mcommit 3df275f0e1fd32effa3a75772f5ba096c3b38e0c[m[33m ([m[1;33mtag: 0.9.4[m[33m)[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 8 12:01:55 2019 +1000
+
+    Interim release with transmission constraints
+
+[33mcommit 95980a68b42550f99b72248784930e257ad9a9c5[m
+Merge: fd890d0 e653088
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 8 11:53:17 2019 +1000
+
+    Accepted pull request branch 'ace-teknologi-feature/docker'
+
+[33mcommit e653088cb1581374c1fa20bb0efca7503f7649cb[m
+Merge: fd890d0 72d96cc
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 8 11:52:57 2019 +1000
+
+    Merge branch 'feature/docker' of git://github.com/ace-teknologi/openCEM into ace-teknologi-feature/docker
+
+[33mcommit fd890d07cb5db78143c82d203e264a81aee621a4[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 8 11:46:41 2019 +1000
+
+    Added Dockerfile support as per #2
+
+[33mcommit 41ab251e22e3217e3ea306d9f069cdc619081d3c[m
+Merge: f5663fa 779dd09
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Mon Jul 8 11:43:36 2019 +1000
+
+    Merge pull request #7 from openCEMorg/trans
+    
+    Transmission constraints
+
+[33mcommit 779dd09f79870545ea012afea71ccaf38c40121d[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 8 11:40:22 2019 +1000
+
+    Added reference to biomass limit
+
+[33mcommit 350133ea575919cd36ea9fd956bce22ed3031edc[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 8 11:38:27 2019 +1000
+
+    Fixed warning text for initial transmission capacity
+
+[33mcommit 63f27d1e1c6b52058aa0baea0d68fbdac99f8ce7[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 8 10:29:11 2019 +1000
+
+    pylint fix
+
+[33mcommit ae5c1da69c58d3d94bfb67deaa54ccdabf424f1f[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 8 10:28:29 2019 +1000
+
+    Unit tests are up to date
+
+[33mcommit 5205116aedba1419f3c5a2a3ea6b4e7a87067982[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Fri Jul 5 16:01:56 2019 +1000
+
+    refactored hybrid charge discharge constraints and modified operational reserve constraint
+
+[33mcommit 4cc55f29fd26b07ba2c0f6213afbb6cdb156ea27[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Fri Jul 5 15:59:14 2019 +1000
+
+    Updated test suite
+
+[33mcommit 2f6db5011ca6705c064b7d78b276b24fc3fce931[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Fri Jul 5 10:25:04 2019 +1000
+
+    Refactored storage constraints to include stor_reserve
+
+[33mcommit e021112955bf32067fda296e448ac97fe261f191[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Fri Jul 5 09:11:24 2019 +1000
+
+    Replaced region_in_zone function to correct module
+
+[33mcommit 7523c01a53c4ce0fec48bd4bb47e302b19ab0853[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Jul 4 13:06:02 2019 +1000
+
+    Linearly varying heat rate for comitted generators
+
+[33mcommit ac2638a7ba818f491f6efda95c77c2656d5048c7[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu Jul 4 12:43:12 2019 +1000
+
+    initializers.py Improved docstrings
+
+[33mcommit ce1d287d705e9c653ff1fc6547c6e16562b9fc38[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Wed Jul 3 15:14:50 2019 +1000
+
+    Tidying up numerical errors on dispatch output
+
+[33mcommit d37bf7003f711dad5b4990ee41668b78b7215839[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 1 16:25:20 2019 +1000
+
+    Refactored transmission build costs to be individually prescribed per link
+
+[33mcommit becec9414c8aed10e18ffb6e90d28dbbca79e884[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 1 16:12:01 2019 +1000
+
+    obsolete intercon data
+
+[33mcommit 0db74960156fd0114b6cba2dacec77f86a9034b7[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 1 15:38:56 2019 +1000
+
+    Refactored default capacity factor
+
+[33mcommit bf9d8ab48e70a572a1c5581ca71f5a997bcac134[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 1 15:23:21 2019 +1000
+
+    Added a NEM wide cap on yearly generation
+
+[33mcommit 577c13ded4f63801e795ed917070f6a6ae776ecb[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Jul 1 14:54:23 2019 +1000
+
+    Refactored max mwh constraint
+
+[33mcommit beae91875d83d67a8ebceb38c356c08a51281d93[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Jun 25 16:28:57 2019 +1000
+
+    Added resume feature, now files are always stored in a local directory named after the configuration file
+
+[33mcommit 8bd12a4f1ddf07ffa10f68fee17a1bc580ce5751[m
+Merge: 37f7b95 c30939d
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Jun 25 16:28:06 2019 +1000
+
+    Merge branch 'trans' of https://github.com/openCEMorg/openCEM into trans
+
+[33mcommit c30939d57c9c0f2c29bbe05b8a19c49fc786f5cd[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Mon Jun 24 16:32:47 2019 +1000
+
+    Reversing unintented changes to multi
+
+[33mcommit 37f7b952ff7c5f77a3dceac805ebbcdf03bc5b10[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Fri Jun 21 14:36:16 2019 +1000
+
+    Added losses proportioning factors and different distance to 5 to 11 link
+
+[33mcommit c8b2b7801cc54801c3cc742c17c0cf5ae5301339[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Tue May 21 16:59:08 2019 +1000
+
+    Metadata must not change data types
+
+[33mcommit 2072ea92f88ea10be8db315601c24cea1d3bcde1[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon May 20 11:51:25 2019 +1000
+
+    Full set of changes currently being tested
+
+[33mcommit faa598c933dd3420db178f67e4fc175de26aaa74[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 16 17:02:16 2019 +1000
+
+    Hardcoded constraint for congestion around Snowy hydro
+
+[33mcommit a39d349f6da7762c1cc3fff9a08060d6e73dd09b[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 16 16:37:04 2019 +1000
+
+    Distance based linear costs for transmission
+
+[33mcommit 71747e79378b00e0fc2c75421071ec643be8a5dc[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 16 13:06:07 2019 +1000
+
+    Catch all for remaining changes to add intercon_cap_op and con_intercon_cap
+
+[33mcommit d5abcac7cdeb0d5fd785415bf43f99980d992fba[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 16 13:03:21 2019 +1000
+
+    Replaced transmission limit with intercon_op_cap to limit flows
+
+[33mcommit bb0e66c080817200ac97e232143720f59e4481a8[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 16 12:50:03 2019 +1000
+
+    refactored cost_capital_per_zone to cost_build_per_zone
+
+[33mcommit 6a31ac0891cac26b38de18361a9fe8f7689ad292[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 16 12:48:47 2019 +1000
+
+    added intercon fcr
+
+[33mcommit bb5fe809fb6ac6ea8e2bdbdf1f2902ffc3c2352f[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 16 12:44:50 2019 +1000
+
+    Declared transmission build cost per zone for carryover aggregation
+
+[33mcommit 333357194b555ad0f5c449bbef768a3f4289f6a3[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 16 10:03:01 2019 +1000
+
+    refactored zone_intercons to intercons_in_zones
+
+[33mcommit b8fc669eaad78df3288845baf620add1bf575000[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 16 09:57:30 2019 +1000
+
+    Report transmission build and use costs
+
+[33mcommit 3ce1cab59a60f813baee7409d4d8ee5621aaaee4[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 16 09:57:16 2019 +1000
+
+    transmission use cost as default
+
+[33mcommit 803db276c41f069dc80be0fb33e9e22ecea1a4fc[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 16 09:55:29 2019 +1000
+
+    refactored constraint name for gen,stor and hyb capacity builds
+
+[33mcommit 376cc831eec65e11df63f785305e21bc40163c83[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Fri May 3 11:09:51 2019 +1000
+
+    cost_capital_per_zone now services cost_cap_carry_forward calculations
+
+[33mcommit ea121245e95b4ef45a4f4bf8036f8b362137fe9c[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 2 13:07:20 2019 +1000
+
+    Refactored capital cost calculations not to be per zone
+
+[33mcommit c5a9e938e3f004032c7768934a97db301c67146d[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 2 11:12:42 2019 +1000
+
+    Added operating transmission constraint
+
+[33mcommit 4fb9eb800dc25070a62d0c588d53f5d3018f983d[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Thu May 2 11:01:35 2019 +1000
+
+    Updated json output of new transmission variables and parameters
+
+[33mcommit e99824af8f75218f45ff2973a6ef48a43fa51676[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Wed May 1 16:33:46 2019 +1000
+
+    Populated all limits for nodes and identified 6 items for review
+
+[33mcommit 795fbe161c1e723047d98f985b6d3a0ac3c80724[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Apr 30 16:16:15 2019 +1000
+
+    surplus is indexed by zones
+
+[33mcommit 7dfb5e6e2e14370991e93fb7a7a8f7f6ba2a0afc[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Apr 30 16:15:45 2019 +1000
+
+    updates unserved calculations for printstats to zones
+
+[33mcommit c366da637bce51304e50626d6396870ac41becb9[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Apr 30 13:49:53 2019 +1000
+
+    prop factors are now loss factors based on a distance metric
+
+[33mcommit 03ca4bbfd83dc795e693a9c8b1a80179fe7c94df[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Apr 30 13:46:43 2019 +1000
+
+    utility to map a zone to its region
+
+[33mcommit 473be6c690d418a58c7da33223569958243cc298[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Apr 30 13:45:47 2019 +1000
+
+    init_zone_demand factors and unit test
+
+[33mcommit f6edca7d918e317f2c09ecbc0339645d48425c21[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Apr 30 12:00:08 2019 +1000
+
+    zonal demand distribution factors and mapping to provinces for holidays module
+
+[33mcommit 83d75a7beb7fbfc1b37aa4b2d1854b98a460c729[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Apr 30 09:48:45 2019 +1000
+
+    Unserved energy defined by zone
+
+[33mcommit 80b8d970c40538bbb1a9eab5734a44e32e81624b[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Apr 30 09:45:42 2019 +1000
+
+    pythonic naming for max_trans constraint
+
+[33mcommit cb82a6397a465ba99bde3a7fdc711040ea3b34a1[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Apr 29 15:55:46 2019 +1000
+
+    load balance defined per zone
+
+[33mcommit ed5703c8ace5f5ceefbe76ead722ef5d6577c5fa[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Apr 29 15:51:08 2019 +1000
+
+    transmission variables and parameters are now per zone
+
+[33mcommit 94807fbfbd8dc6094fd9060614b346da7b5bdabf[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Apr 29 15:43:57 2019 +1000
+
+    intercon initialisers work with zone intercon data (plus flake8 warnings)
+
+[33mcommit adc0c7f90dc60a0292c3d6de4db5ce401f37e8b5[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Apr 29 15:32:17 2019 +1000
+
+    zone intercon data
+
+[33mcommit 86797c5ed311ee360b1beced4362f762c4d261e5[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Apr 29 14:45:31 2019 +1000
+
+    prevent discovering tests when directory is root of a virtualenv environment
+
+[33mcommit 206717a4c11de4acb03fdd3c0528c39695bc740f[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Apr 29 14:44:57 2019 +1000
+
+    temporary access to database
+
+[33mcommit f5663fad11e2735a24ef9b6a5ac75017cb00fe4c[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Apr 29 13:31:27 2019 +1000
+
+    cemo/multi.py refactor method to format tech lists in sql statements
+
+[33mcommit f301ad2e8d56c2abdb01028aefe59afa75a4cfda[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Mon Apr 29 13:30:50 2019 +1000
+
+    cemo/multi.pyt refactoring method to format zone tech tuples in sql statements
+
+[33mcommit aa4efaf61487a6cdc4db286ba3371c22e0355c88[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 15:21:07 2019 +1000
+
+    test/conftest.py added docstrings
+
+[33mcommit ac4ba383eaf4a72856015f049776ffefada66acb[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 15:17:44 2019 +1000
+
+    msolve.py added docstring to function
+
+[33mcommit dfe049c087c68ffa2e0ed9faa975990da204fbc3[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 15:17:29 2019 +1000
+
+    ReferenceModel.py docstring
+
+[33mcommit 2fcf37787c3de1e8e7c3f53c8fa4fdf02ec4b973[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 15:09:05 2019 +1000
+
+    cemo/cluster.py Added docstrings and removed pylint warnings
+
+[33mcommit 6278691d5c889ac0feabb0b9e4de2b6ed2ce5afe[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 15:06:56 2019 +1000
+
+    cemo/multi.py added docstrings
+
+[33mcommit f44b9a3cd8d62535bdeb271922bdaa913e1d8b54[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 14:45:34 2019 +1000
+
+    cemo/utils.py Added docstrings
+
+[33mcommit 58af6111b851bb514081eba3bb16016937cd361e[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 14:37:30 2019 +1000
+
+    cemo/jsonify.py Amended or suppresed pylint warnings
+
+[33mcommit efb70b1358dfbbc1629f4eb6a1be4b59eb27c83a[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 14:30:38 2019 +1000
+
+    cemo/rules.py Added docstrings
+
+[33mcommit 41a21e311e77ec45cca4ec71a95f6ea405fc055a[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 14:22:45 2019 +1000
+
+    cemo/rules.py simplify storage dymanics using pyomo ordered set functionality
+
+[33mcommit d538d335a1ace09fe72c3170564428256d6ba24c[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 14:10:25 2019 +1000
+
+    cemo/cluster.py Added docstrings to module
+
+[33mcommit d03dd7bc7139cd15a076ecebdf2ac9ebea11233c[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 14:09:39 2019 +1000
+
+    tests/test_cluster.py added next day and prev day unit tests
+
+[33mcommit 4b46b58c8462a34b54c8c8c33d3f3a9f749aa3de[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 11:21:23 2019 +1000
+
+    tests/test_utils.py Removed pylint warnings
+
+[33mcommit 7a3fb80ea593e4ce32d362f1a5e7a923d9bf152a[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 11:18:25 2019 +1000
+
+    tests/test_base_solution.py Remove several pylint warnings
+
+[33mcommit 7c2d340bf8a92a81823ac49eb82860c2953e3d9b[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Wed Apr 17 11:07:28 2019 +1000
+
+    tests/test_cluster.py remove more pylint warnings
+
+[33mcommit 33444b9d6fee239c737e4afd6a20205304563e8e[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Tue Apr 16 09:52:14 2019 +1000
+
+    tests/test_cluster.py edited file comparison tests to be robust across platforms
+
+[33mcommit 8f552513bcfc61f0359a5a4228b9c523fcdab4be[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Tue Apr 16 09:49:42 2019 +1000
+
+    tests/test_multi.py refactored tests to also work in Windows
+
+[33mcommit d03282addb02cb69fa4cc97736018f5fe1dbe999[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Thu Apr 11 15:14:22 2019 +1000
+
+    cemo/initialisers.py Added docstrings
+
+[33mcommit 53da2a800404b319cfd751a359e970b2cce1e721[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Thu Apr 11 15:14:09 2019 +1000
+
+    test/test_rules.py Added docstrings
+
+[33mcommit 256a88ab9ee74dfd79909ae1b31b791555fe027a[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Tue Apr 9 11:28:57 2019 +1000
+
+    tests/test_jsonify.py Added docstrings
+
+[33mcommit ad2930b4fba7b5b37ea0e61402d538683c8e7ef5[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Tue Apr 9 11:28:46 2019 +1000
+
+    test/test_multi.py Added docstrings
+
+[33mcommit 24508e60b5afef306c666ce8b84021ba9bd6c8f9[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Tue Apr 9 11:28:29 2019 +1000
+
+    tests/test_base.py Added docstrings
+
+[33mcommit 1624c2611a6fee9c94b7d46825cbadc33209b6e6[m
+Merge: 9e6c229 83e0423
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Tue Apr 9 09:50:43 2019 +1000
+
+    Merge pull request #5 from bje-/master
+    
+    Eliminate various Pylint warnings
+
+[33mcommit 83e04233d4af0d465d1145e02136a85cdeffbfa2[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 22:49:22 2019 +1000
+
+    * tets/test_utils.py: Use 'with' for automatic file closure.
+
+[33mcommit 6d8d47775c852fb8ad03c6e2fecd1454a496e111[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 21:20:48 2019 +1000
+
+    * cemo/utils.py: Whitespace fix.
+
+[33mcommit 88a93f8150b66a0c44d23122d6771d8c8048b788[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 20:52:31 2019 +1000
+
+    * tests/test_utils.py (test_printstats): Simplify.
+    
+    No need to loop over the file contents. Just read() the file.
+
+[33mcommit dba69ea4148bae17a5c2e5b5eb15d7a663eea051[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 20:40:18 2019 +1000
+
+    The expression 'True if expr else False' can be reduced to 'expr'.
+    
+    * cemo/multi.py: Silence the following Pylint warnings:
+      R1719(simplifiable-if-expression), SolveTemplate.__init__] The if
+      expression can be replaced with 'test'
+
+[33mcommit 8b17781fa0dd4e7a74ac5f339d93adb10aa8c993[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 17:41:09 2019 +1000
+
+    * cemo/utils.py: Silence Pylint warning W0612(unused-variable),
+      plotcluster] Unused variable 'f'.
+
+[33mcommit 4b62327877aa5a4eff2f356445e1ca1549aa9f6c[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 16:29:56 2019 +1000
+
+    * cemo/rules.py: Silence Pylint warning R1705 (no-else-return)
+      Unnecessary "else" after "return".
+
+[33mcommit 966e26aaedb8953a0806572b08d4d7d5b2ec1b36[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 16:26:01 2019 +1000
+
+    * cemo/cluster.py: Rename 'max' to 'max_p' to avoid a name clash with
+      the Python built-in max() function. We can use the _p suffix to
+      indicate predicate variables.
+
+[33mcommit 0a1f2ec077ad57b63a2456557751728c96ae5d6f[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 16:25:31 2019 +1000
+
+    * cemo/const.py: Clean up broken expression.
+
+[33mcommit 2796752c23a5f6ad97550fba969de4dcbe827f53[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 16:24:16 2019 +1000
+
+    * cemo/jsonify.py: Rename 'input' to 'inp' to avoid a name clash with
+      the Python built-in input() function.
+
+[33mcommit 736bac2c1a39ec2f2b288d5d178f8be6e20e2114[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 16:21:59 2019 +1000
+
+    * cemo/utils.py: Elimiate Pylint warning: W0108(unnecessary-lambda),
+      <lambda>] Lambda may not be necessary.
+
+[33mcommit 726babada02fdbb1435fbe3ba3e657e9bd11e96d[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 16:21:38 2019 +1000
+
+    * cemo/const.py: Typo fix in a comment.
+
+[33mcommit ca20fa052fff076faecaa1037b86212f089f1474[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 16:18:34 2019 +1000
+
+    * cemo/cluster.py: Silence Pylint warning W0102: Dangerous default
+      value [] as argument. See http://pylint-messages.wikidot.com/messages:w0102
+      for details.
+
+[33mcommit 3b20b2b2757632d647e144687ee56af4da3ffb98[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 16:12:10 2019 +1000
+
+    * cemo/utils.py: Silence Pylint warning W0102: Dangerous default value
+      [] as argument. See http://pylint-messages.wikidot.com/messages:w0102
+      for details.
+
+[33mcommit 5ecf5b8b0f670254a281d522c62359a7cfe91ec8[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 16:02:30 2019 +1000
+
+    * multi.py: Fix Pylint warning [R1716(chained-comparison), roundup]
+      Simplify chained comparison between the operands.
+
+[33mcommit d1fb8b062fe8211b2a6f976e86a5a3a6aa510062[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 15:38:45 2019 +1000
+
+    * msolve.py: Eliminate Pylint warning W0612(unused-variable),
+      valid_file] Unused variable 'base'.
+
+[33mcommit f01fdef4ae7ffa47738761b9df46923885965f51[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 15:15:51 2019 +1000
+
+    * msolve.py: Elimiate Pylint warning: W0108(unnecessary-lambda),
+      <lambda>] Lambda may not be necessary.
+
+[33mcommit 9e6c229003195eadaa1d21df46f589fceb098192[m
+Merge: 09c428d ff58eac
+Author: José Zapata <35284098+jotaigna@users.noreply.github.com>
+Date:   Mon Apr 8 15:05:08 2019 +1000
+
+    Merge pull request #4 from bje-/master
+    
+    flake8 fixes
+
+[33mcommit ff58eacc2a9e67717af189e979c17e0c5832fc67[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 14:50:28 2019 +1000
+
+    * ssolve.py: Remove bare exception handler. Given that this code just
+      prints the exception and exits with status 1, it might be better to
+      not catch these exception and let Python print the traceback and
+      exit (it also exits with status 1).
+
+[33mcommit 09c428da5f8fb70567c83d6dbbe540f4fbec2ed1[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Mon Apr 8 14:43:17 2019 +1000
+
+    [fix]test_multi.py: do not save temp files in local directory
+
+[33mcommit db7a8f2d540580d2f9081231e601621df948803e[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Mon Apr 8 14:07:07 2019 +1000
+
+    [feature] Added requirements file (thanks to Joel Courtney)
+
+[33mcommit a7f5954ff84b413f47c52a674baf5bb9c0ad333a[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Mon Apr 8 14:05:08 2019 +1000
+
+    [fix] json entries parsed more robustly
+
+[33mcommit 28835da3eaa042c88c06494f5bce2f84f45405a7[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Mon Apr 8 14:04:42 2019 +1000
+
+    [fix] consistent output for emissions in statistics report
+
+[33mcommit ba95d55908f4eb83890a01ba66d4e39f2204631b[m
+Author: José Zapata <jotaigna@gmail.com>
+Date:   Mon Apr 8 14:04:12 2019 +1000
+
+    [fix] Consistent pandas formatted output
+
+[33mcommit 8b01cda25b3d741262c94f9b042fb76ce1b06d5e[m
+Author: Ben Elliston <bje@air.net.au>
+Date:   Mon Apr 8 11:40:56 2019 +1000
+
+    flake8 fixes.
+
+[33mcommit 72d96cc7fd0cec46da6fba7e3f371eb24f6ef866[m
+Author: Joel Courtney <euphemize@gmail.com>
+Date:   Fri Apr 5 00:29:59 2019 +1100
+
+    Feature: Docker support added along with requirements.txt
+
+[33mcommit 8a18b4238fc48db0320e26a88fe6819af9c8a15f[m[33m ([m[1;33mtag: 0.9.3[m[33m)[m
+Author: José Zapata <jose.zapata@itpau.com.au>
+Date:   Thu Apr 4 22:12:53 2019 +1100
+
+    open beta release
+
+[33mcommit 0ab41103c05a58d54a3f0b1a96da42c8dbbe9a06[m
+Author: Jose Zapata <jotaigna@gmail.com>
+Date:   Wed Feb 13 04:26:16 2019 +0000
+
+    README.md edited online with Bitbucket
+
+[33mcommit 147cf52bd38ef4374234fe9a124e6e2dda774c50[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Feb 12 15:07:52 2019 +1100
+
+    Merge branch 'develop'
+
+[33mcommit 0c20be83f6d9be5082fd6dd2bc83324089afb771[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Feb 12 14:55:37 2019 +1100
+
+    More obsolte files
+
+[33mcommit fe1d8fb7230d13e6e9b536e3c174dd752473209b[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Feb 12 14:50:01 2019 +1100
+
+    opencem beta update 1
+
+[33mcommit 1202f93e8a1e63a5db95025d85a4ebd3e3866953[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Dec 18 14:24:31 2018 +1100
+
+    Removed obsolete files and submodules
+
+[33mcommit 4cdd66f05e70c0eeeffaabc718bc33c6c65ffc5b[m
+Author: José Ignacio Zapata Fuentealba <jose.zapata@itpau.com.au>
+Date:   Tue Dec 18 14:20:37 2018 +1100
+
+    Beta release of openCEM
+
+[33mcommit 53879da2af2e14a0cdf5d7a9f80309601172e80c[m
+Author: Andrew <andrew.hall@itpau.com.au>
+Date:   Wed Sep 19 06:24:55 2018 +0000
+
+    Initial Bitbucket Pipelines configuration
+
+[33mcommit 2753f6ad35a0577096086f77abb09cb45cffc410[m
+Author: andrew-m-h <andrew.m.h96@gmail.com>
+Date:   Wed Sep 19 16:21:50 2018 +1000
+
+    add pipeline yml
+
+[33mcommit 027fe2163cf16571d67e06f78dd2349aa5a81a3a[m
+Author: José Zapata <jose.zapata@itpau.com.au>
+Date:   Fri Jun 15 14:55:33 2018 +1000
+
+    Added cemo_db, test suite, sparse sets for regions and techs in zones, command line args for solve.py
+
+[33mcommit fcd46443d5300b469559b5b64f69a995938de9d4[m
+Author: José Ignacio Zapata <jose.zapata@itpau.com.au>
+Date:   Tue May 1 10:56:20 2018 +1000
+
+    python3 and calling cbc solver
+
+[33mcommit 79f7c8e8ac48dfc05ab496bf0ee8d0e9e67394ae[m
+Author: José Ignacio Zapata <jose.zapata@itpau.com.au>
+Date:   Tue May 1 10:55:58 2018 +1000
+
+    Operating capacity carries over between inv periods
+
+[33mcommit 4dc1791e943027758c40f31e304dea8658429ec3[m
+Author: José Ignacio Zapata <jose.zapata@itpau.com.au>
+Date:   Thu Apr 19 10:50:50 2018 +1000
+
+    Added capability to obtain data from SQLite3 database
+
+[33mcommit d5c1858a0736671e4edbf20d4810dfc5d8fa7ed0[m
+Merge: 37d0097 b71a202
+Author: José Ignacio Zapata <jose.zapata@itpau.com.au>
+Date:   Thu Apr 19 09:43:45 2018 +1000
+
+    Merge branch 'develop' of https://bitbucket.org/itpanalyitics/cemo into develop
+
+[33mcommit 37d00978d0fd8e247757fe437879dbc54c916dba[m
+Author: José Ignacio Zapata <jose.zapata@itpau.com.au>
+Date:   Thu Apr 19 09:43:05 2018 +1000
+
+    First draft of prototype model with mock data and basic plotting
+
+[33mcommit b71a2027801fecdda63120fbd44de7bb8e1d5a94[m
+Author: José Zapatau <jose.zapata@itpau.com.au>
+Date:   Thu Apr 19 09:40:15 2018 +1000
+
+    First draft of prototype model with mock data and basic plotting
+
+[33mcommit 9575d8a9687256cad67f4e55c870774cc417c074[m
+Author: José Ignacio Zapata Fuentealba <jotaigna@gmail.com>
+Date:   Wed Feb 14 04:12:26 2018 +0000
+
+    README.md edited online with Bitbucket
+
+[33mcommit 3119a60447443a136f62ce691e6ab913769efa91[m
+Author: José Ignacio Zapata Fuentealba <jotaigna@gmail.com>
+Date:   Mon Jan 8 22:28:35 2018 +0000
+
+    README.md created online with Bitbucket

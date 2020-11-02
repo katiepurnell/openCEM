@@ -136,16 +136,16 @@ def save_results(inst, out,yearyear): #KP_MODIFIED - this section is from Dan
                                                                                 for r in inst.regions
                                                                                 for t in inst.t)))]
     df["5_Build_Cost"] = [locale.currency(value(cemo.rules.cost_capital(inst)))]
-    df["7_Build_cost_endo"]=[locale.currency(sum(value(cemo.rules.cost_build_per_zone_model(inst, zone) for zone in inst.zones)))]
-    df["7_Build_cost_exo"]=[locale.currency(sum(value(cemo.rules.cost_build_per_zone_exo(inst, zone) for zone in inst.zones)))]
+    # df["7_Build_cost_endo"]=[locale.currency(sum(value(cemo.rules.cost_build_per_zone_model(inst, zone) for zone in inst.zones)))]
+    # df["7_Build_cost_exo"]=[locale.currency(sum(value(cemo.rules.cost_build_per_zone_exo(inst, zone) for zone in inst.zones)))]
 
     df["5_Repayment_cost"]=[locale.currency(value(sum(inst.cost_cap_carry_forward[z] for z in inst.zones)))]
     df["5_Operating_cost"] =[locale.currency(value(cemo.rules.cost_operating(inst)))]
     df["5_Fixed_cost"] =[locale.currency(value(cemo.rules.cost_fixed(inst)))]
     df["5_Trans_build_cost"]= [locale.currency(value(cemo.rules.cost_trans_build(inst)))]
 
-    df["7_Trans_build_cost_endo"]=[locale.currency(sum(value(cemo.rules.cost_trans_build_per_zone_model(inst, zone)) for zone in inst.zones))]
-    df["7_Trans_build_cost_exo"]=[locale.currency(sum(value(cemo.rules.cost_trans_build_per_zone_exo(inst, zone)) for zone in inst.zones))]
+    # df["7_Trans_build_cost_endo"]=[locale.currency(sum(value(cemo.rules.cost_trans_build_per_zone_model(inst, zone)) for zone in inst.zones))]
+    # df["7_Trans_build_cost_exo"]=[locale.currency(sum(value(cemo.rules.cost_trans_build_per_zone_exo(inst, zone)) for zone in inst.zones))]
     df["5_Trans_flow_cost"]=[locale.currency(value(cemo.rules.cost_trans_flow(inst)))]
     df["5_Unserved_cost"]=[locale.currency(value(cemo.rules.cost_unserved(inst)))]
 
@@ -641,6 +641,139 @@ def plotcapacity(instance, out,yearyear):  # pragma: no cover
         # gather load for NEM region from solved model instance
         # empty set of all technologies in a region
         techsinregion = _techsinregion(instance, r)
+        # gather technology text_ids in region for plot labels
+        plabels = []
+        for t in techsinregion:
+            plabels.append(tname[t])
+
+        # Empty array of gen_cap_op_r
+        gen_cap_op_r = np.zeros([len(techsinregion)])
+        gen_cap_new_r = np.zeros([len(techsinregion)])
+        # positions of each tech in numpy array
+        pos = dict(zip(list(techsinregion), range(len(techsinregion))))
+        # collect the total dispatch for each technology across Zones in region
+        for z in instance.zones_per_region[r]:
+            for n in instance.gen_tech_per_zone[z]:
+                gen_cap_op_r[pos[n]] = gen_cap_op_r[pos[n]] + \
+                    np.array([value(instance.gen_cap_op[z, n])])
+                gen_cap_new_r[pos[n]] = gen_cap_new_r[pos[n]] + \
+                    np.array([value(instance.gen_cap_new[z, n])])
+            for s in instance.stor_tech_per_zone[z]:
+                gen_cap_op_r[pos[s]] = gen_cap_op_r[pos[s]] + \
+                    np.array([value(instance.stor_cap_op[z, s])])
+                gen_cap_new_r[pos[s]] = gen_cap_new_r[pos[s]] + \
+                    np.array([value(instance.stor_cap_new[z, s])])
+            for h in instance.hyb_tech_per_zone[z]:
+                gen_cap_op_r[pos[h]] = gen_cap_op_r[pos[h]] + \
+                    np.array([value(instance.hyb_cap_op[z, h])])
+                gen_cap_new_r[pos[h]] = gen_cap_new_r[pos[h]] + \
+                    np.array([value(instance.hyb_cap_new[z, h])])
+
+        N = np.arange(len(techsinregion))
+        ExCap_r = gen_cap_op_r - gen_cap_new_r
+        width = 0.35
+        # Plotting instructions
+        colour = palette(instance, techsinregion)
+        if r % 2 == 0:
+            ax = fig.add_subplot(2, 2, r)
+        else:
+            ax = fig.add_subplot(3, 2, r)
+        ax.bar(N, ExCap_r.tolist(), width, color=colour)  # Existing capacity
+        ax.bar(N, gen_cap_new_r, width, bottom=ExCap_r,
+               color=colour, edgecolor='white', hatch='////')  # New Capacity
+        ax.set_xticks(N)
+        ax.set_xticklabels([tname[t] for t in techsinregion])
+        for tick in ax.get_xticklabels():
+            tick.set_rotation(90)
+        ax.set_title(rname[r], position=(0.9, 0.9))  # Region names
+    # plt.show()
+    plt.savefig(results_dir + out  +'/results/' + out  +'_capacity_allgen_'+str(yearyear)+'.png')
+def plotevcapacity(instance,out,yearyear):
+    """ Stacked plot of capacities
+     Feel free to improve the efficiency of this code
+    """
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    # create set of plots that fits all NEM regions
+    fig = plt.figure(figsize=(14, 9))
+    # horizontal axis with timesamps
+    # cycle through NEM regions`
+    for r in instance.regions:
+        # gather load for NEM region from solved model instance
+        # empty set of all technologies in a region
+        evsinregion = _evsinregion(instance, r)
+        # gather technology text_ids in region for plot labels
+        plabels = []
+        for t in evsinregion:
+            plabels.append(tname[t])
+
+        # Empty array of gen_cap_op_r
+        gen_cap_op_r = np.zeros([len(evsinregion)])
+        gen_cap_new_r = np.zeros([len(evsinregion)])
+        # positions of each tech in numpy array
+        pos = dict(zip(list(evsinregion), range(len(evsinregion))))
+        # collect the total dispatch for each technology across Zones in region
+        for z in instance.zones_per_region[r]:
+
+            for e in instance.ev_tech_per_zone[z]: #KP_ADDED
+                gen_cap_op_r[pos[e]] = gen_cap_op_r[pos[e]] + \
+                    np.array([value(instance.ev_cap_op[z, e])])
+
+
+        N = np.arange(len(evsinregion))
+        ExCap_r = gen_cap_op_r - gen_cap_new_r
+        width = 0.35
+        # Plotting instructions
+        colour = palette(instance, evsinregion)
+        if r % 2 == 0:
+            ax = fig.add_subplot(2, 2, r)
+        else:
+            ax = fig.add_subplot(3, 2, r)
+        ax.bar(N, ExCap_r.tolist(), width, color=colour)  # Existing capacity
+        ax.bar(N, gen_cap_new_r, width, bottom=ExCap_r,
+               color=colour, edgecolor='white', hatch='////')  # New Capacity
+        ax.set_xticks(N)
+        ax.set_xticklabels([tname[t] for t in evsinregion])
+        for tick in ax.get_xticklabels():
+            tick.set_rotation(90)
+        ax.set_title(rname[r], position=(0.9, 0.9))  # Region names
+        # plt.legend(handles=[p1, p2], title='title', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='xx-small')
+    # plt.show()
+    plt.savefig(results_dir + out  +'/results/' + out  +'_ev_capacity_'+str(yearyear)+'.png')
+def plot_evs(instance,scen_name,yearyear):
+    tname = _get_textid('technology_type')
+    for r in instance.regions:
+        evsinregion = _evsinregion(instance, r)
+        plabels = []
+        for t in evsinregion:
+            plabels.append(tname[t])
+        # print(plabels)
+    if len(plabels)>0:
+        plotevcapacity(instance, scen_name, instance.name)
+        plotevresults_v2g(instance, scen_name, instance.name)
+        plotevresults_charge(instance, scen_name, instance.name)
+        plotevresults_dumb_charge(instance, scen_name, instance.name)
+        plotevresults_smart_charge(instance, scen_name, instance.name)
+        plotevresults_transport(instance, scen_name, instance.name)
+        save_ev_traces(instance, scen_name, instance.name)
+    else:
+        print("No EVS to print")
+def plotevresults_v2g(instance,out,yearyear): #KP_MODIFIED_070920
+    """ Process results to plot.
+     Feel free to improve the efficiency of this code
+    """
+    tname = _get_textid('technology_type')
+    rname = _get_textid('region')
+    # Process results to plot.
+    # Feel free to improve the efficiency of this code
+    # create set of plots that fits all NEM regions
+    fig = plt.figure(figsize=(14, 9))
+    # horizontal axis with timesamps
+    ts = np.array([t for t in instance.t], dtype=np.datetime64)
+    # cycle through NEM regions`
+    for r in instance.regions:
+        # Set of all technologies in a region
+        evsinregion = _evsinregion(instance, r)
         # gather technology text_ids in region for plot labels
         plabels = []
         for t in techsinregion:

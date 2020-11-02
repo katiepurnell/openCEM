@@ -558,6 +558,131 @@ def combineScenCap():
 
     return
 
+def combineScenIntercons():
+    inter_cap_fn_xlsx = "Intercon_cap_all_scens.xlsx"
+    df_2050 = pd.DataFrame()
+    with pd.ExcelWriter(base_path/inter_cap_fn_xlsx) as writer:
+        counter = 0
+        for scen in scen_list:
+            # print("\n ************************{}******************** ".format(scen))
+            input_path = Path(base_path/scen)
+            fn = scen + "_intercon_cap_results.csv"
+            try:
+                scen_results = pd.read_csv(input_path/fn, index_col=0, header=0)
+
+                # if len(scen_results)==0:
+                #     print("Empty db")
+                #     continue
+                if "2050" not in scen_results.columns:
+                    print("Empty db / no 2050 column")
+                    continue
+
+                # Add difference column
+                scen_results = scen_results.div(1000)#/1000
+                scen_results = scen_results.fillna(0)#, inplace=True)
+                scen_results["Increase_2050_2021"] = scen_results["2050"] - scen_results["2021"]
+
+                betweenTwoDifferentSymbols = scen_results.index.str.split('_z').str[1]
+                zs=betweenTwoDifferentSymbols.str.split('_d').str[0]
+                # print(btds)
+                scen_results["Zone_Source"] = pd.to_numeric(zs) #zs.astype(int)
+                # print(scen_results["Zone_Source"])
+                zd=scen_results.index.str.split('_d').str[1]
+                scen_results["Zone_Dest"] = pd.to_numeric(zd) #zd.astype(int)
+                scen_results["Region_Source"] = scen_results["Zone_Source"].map(zones_regions_dict)
+                scen_results["Region_Dest"] = scen_results["Zone_Dest"].map(zones_regions_dict)
+                scen_results.loc['Total',:]= scen_results.sum(axis=0)
+                # print(scen_results)
+
+                scen_results.to_excel(writer, sheet_name=str(scen), index=True)
+
+                # Gather the 2050 column and merge
+                col_2050 = scen_results.copy().drop(["2021","2026","2031","2036","2041","2046","Increase_2050_2021","Zone_Source","Zone_Dest","Region_Source","Region_Dest"],axis=1)
+                col_2050.rename(columns= {"2050": scen}, inplace = True)
+
+                col_abs_incr = scen_results.copy().drop(["2021","2026","2031","2036","2041","2046","2050","Zone_Source","Zone_Dest","Region_Source","Region_Dest"],axis=1)
+                col_abs_incr.rename(columns= {"Increase_2050_2021": scen}, inplace = True)
+
+                if counter == 0:
+                    # print("First scenario")
+                    df_2050 = col_2050.copy()
+                    df_abs_increases = col_abs_incr.copy()
+                else:
+                    df_2050 = pd.merge(df_2050, col_2050, how='outer', left_index=True, right_index=True)
+                    df_abs_increases = pd.merge(df_abs_increases, col_abs_incr, how='outer', left_index=True, right_index=True)
+                # print(df_2050)
+                counter = counter + 1
+
+            except FileNotFoundError:
+                print("--- intercon summary for scen: {} not found - skipping".format(scen))
+                continue
+
+        betweenTwoDifferentSymbols = df_2050.index.str.split('_z').str[1]
+        zs=betweenTwoDifferentSymbols.str.split('_d').str[0]
+        # print(btds)
+        df_2050["Zone_Source"] = pd.to_numeric(zs) #zs.astype(int)
+        # print(scen_results["Zone_Source"])
+        zd=df_2050.index.str.split('_d').str[1]
+        df_2050["Zone_Dest"] = pd.to_numeric(zd) #zd.astype(int)
+        df_2050["Region_Source"] = df_2050["Zone_Source"].map(zones_regions_dict)
+        df_2050["Region_Dest"] = df_2050["Zone_Dest"].map(zones_regions_dict)
+
+        betweenTwoDifferentSymbols2 = df_abs_increases.index.str.split('_z').str[1]
+        zs2=betweenTwoDifferentSymbols2.str.split('_d').str[0]
+        # print(btds)
+        df_abs_increases["Zone_Source"] = pd.to_numeric(zs2) #zs.astype(int)
+        # print(scen_results["Zone_Source"])
+        zd2=df_abs_increases.index.str.split('_d').str[1]
+        df_abs_increases["Zone_Dest"] = pd.to_numeric(zd2) #zd.astype(int)
+        df_abs_increases["Region_Source"] = df_abs_increases["Zone_Source"].map(zones_regions_dict)
+        df_abs_increases["Region_Dest"] = df_abs_increases["Zone_Dest"].map(zones_regions_dict)
+
+        df_2050.to_excel(writer, sheet_name="2050_Comp", index=True)
+        df_abs_increases.to_excel(writer, sheet_name="Abs_Increases", index=True)
+    return
+
+def combineScenResults():
+    results_fn_xlsx = "Basic_Results_all_scens.xlsx"
+    df_2050 = pd.DataFrame()
+    with pd.ExcelWriter(base_path/results_fn_xlsx, options={'strings_to_numbers': True}) as writer:
+        counter = 0
+        for scen in scen_list:
+            # print("\n ************************{}******************** ".format(scen))
+            input_path = Path(base_path/scen)
+            fn = scen + "_results.csv"
+            try:
+                scen_results = pd.read_csv(input_path/fn, index_col=0, header=0)
+
+                if "2050" not in scen_results.columns:
+                    print("Empty db / no 2050 column")
+                    continue
+
+                # Add difference column
+                # scen_results = scen_results
+                # scen_results = scen_results.fillna(0)#, inplace=True)
+                # scen_results["Increase_2050_2021"] = scen_results["2050"] - scen_results["2021"]
+                scen_results.to_excel(writer, sheet_name=str(scen), index=True)
+
+                # Gather the 2050 column and merge
+                col_2050 = scen_results.copy().drop(["2021","2026","2031","2036","2041","2046"],axis=1)
+                col_2050.rename(columns= {"2050": scen}, inplace = True)
+
+                if counter == 0:
+                    # print("First scenario")
+                    df_2050 = col_2050.copy()
+                else:
+                    df_2050 = pd.merge(df_2050, col_2050, how='outer', left_index=True, right_index=True)
+                # print(df_2050)
+                counter = counter + 1
+
+            except FileNotFoundError:
+                print("--- results summary for scen: {} not found - skipping".format(scen))
+                continue
+
+        df_2050.to_excel(writer, sheet_name="2050_Comp", index=True)
+    return
+
+
 for scen in scen_list:
     print(scen)
     consolidateResults(scen)
