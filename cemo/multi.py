@@ -147,9 +147,11 @@ class SolveTemplate:
         self.v2g_enabled = Scenario['v2g_enabled']
         self.smart_enabled = Scenario['smart_enabled']
         self.ev_level_floor_soc = Scenario['ev_level_floor_soc']
+        self.smart_fit = Scenario['smart_fit']
         print("v2g_enabled exists, {}".format(self.v2g_enabled))
         print("Smart_enabled exists, {}".format(self.smart_enabled))
         print("EV Batt Floor, {}".format(self.ev_level_floor_soc))
+        print("Smart payment method (0=annual reward, 1=FiT), {}".format(self.smart_fit))
 
         self.manual_intercon_build = None
         if config.has_option('Scenario', 'manual_intercon_build'):
@@ -259,6 +261,18 @@ class SolveTemplate:
             raise ValueError(
                 'openCEM-ev_level_floor_soc: Value must be between 0 and 1')
         self._ev_level_floor_soc = data
+
+    @property
+    def smart_fit(self):
+        '''Property getter for smart_fit'''
+        return self._smart_fit
+
+    @smart_fit.setter
+    def smart_fit(self, data):
+        if float(data) < 0 or float(data) > 1:
+            raise ValueError(
+                'openCEM-smart_fit: Value must be either 0 or 1')
+        self._smart_fit = data
 
     @property
     def cost_emit(self):
@@ -579,7 +593,7 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
             'cost_hyb_vom': 'tech',
             'cost_ev_fom': 'tech',
             'cost_ev_vom': 'tech',
-            # 'cost_ev_smart_vom': 'tech',
+            'cost_ev_smart_vom': 'tech',
             'cost_stor_fom': 'tech',
             'cost_stor_vom': 'tech'}
         if self.custom_costs is not None:
@@ -782,6 +796,12 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
                 + "param ev_level_floor := " + \
                 str(self.ev_level_floor_soc) + ";\n"
 
+        smart_fit = ""
+        if self.smart_fit:
+            smart_fit = "\n#NEM wide payment for smart charging -> Feed-in-tarriff method (0= Annual Reward Method, 1= FiT Method)\n"\
+                + "param smart_fit_method := " + \
+                str(self.smart_fit) + ";\n"
+
         if self.Years.index(year) == 0:
             prevyear = 2017
         else:
@@ -865,6 +885,7 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
                 fo.write(nem_re_disp_ratio)
                 fo.write(v2g_enabled)
                 fo.write(smart_enabled)
+                fo.write(smart_fit)
                 fo.write(ev_level_floor_soc)
         return str(dcfName)
 
@@ -892,7 +913,8 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
         Assemble full simulation output as metadata+ full year results in each simulated year
         """
         for y in self.Years:
-            print("YEAR: {}".format(y))
+            now = datetime.datetime.now()
+            print("\nYEAR: {} started at {}".format(y, now.strftime('%Y-%m-%d %H:%M:%S')))
             yearyear = y #KP_MODIFIED
             scen_name = self.Name #KP_MODIFIED
             if self.resume:
@@ -982,6 +1004,7 @@ group by zones,all_tech;" : [zones,all_tech] ev_cap_initial;
             "EV fleet V2G enabled ratio ": self.v2g_enabled,
             "EV fleet smart charging enabled ratio ": self.smart_enabled,
             "EV fleet floor ": self.ev_level_floor_soc,
+            "EV smart charging method (0=annual reward, 1=FiT) ": self.smart_fit,
             "Custom costs": pd.read_csv(self.custom_costs).fillna(value={'zone': 0}).fillna(99e7).to_dict(orient='records') if self.custom_costs is not None else None,  # noqa
             "Exogenous Capacity decisions": pd.read_csv(self.exogenous_capacity).to_dict(orient='records') if self.exogenous_capacity is not None else None,  # noqa
             "Exogenous Transmission decisions": pd.read_csv(self.exogenous_transmission).to_dict(orient='records') if self.exogenous_transmission is not None else None,  # noqa

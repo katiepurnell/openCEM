@@ -34,7 +34,7 @@ from cemo.rules import (ScanForHybridperZone, ScanForEVperZone, ScanForStoragepe
                         con_gen_cap, con_hyb_cap, con_hyb_flow_lim,
                         con_hyb_level_max, con_hyb_reserve_lim, con_hybcharge,
                         con_ev_cap, con_evcharge, con_maxchargeev, con_minchargeev, con_ev_flow_lim, con_ev_trans_disp,
-                        con_ev_reserve_lim, con_ev_v2g, con_ev_level_max, con_ev_num_vehicles,
+                        con_ev_reserve_lim, con_ev_v2g, con_ev_level_max, con_ev_num_vehicles, con_ev_num_smart_participating_vehicles,
                         con_intercon_cap, con_ldbal, con_max_mhw_per_zone,
                         con_max_mwh_nem_wide, con_max_trans, con_maxcap,
                         con_maxcharge, con_maxchargehy, con_min_load_commit,
@@ -44,7 +44,7 @@ from cemo.rules import (ScanForHybridperZone, ScanForEVperZone, ScanForStoragepe
                         con_stor_cap,
                         con_stor_flow_lim, con_stor_reserve_lim,
                         con_storcharge, con_uns, con_uptime_commitment,
-                        obj_cost, con_ev_dumb_charge, con_ev_smart_charge)
+                        obj_cost, con_ev_dumb_charge, con_ev_dumb_charge_min, con_ev_smart_charge)
 
 
 def model_options(**kwargs):
@@ -57,6 +57,7 @@ def model_options(**kwargs):
               'nem_disp_ratio': True,
               'v2g_enabled': False,
               'smart_enabled': False,
+              'smart_fit': False,
               'ev_level_floor_soc': False,
               'nem_re_disp_ratio': False,
               'build_intercon_manual': False}
@@ -219,7 +220,7 @@ class CreateModel():
         self.m.cost_ev_fom = Param(self.m.ev_tech)
         # Variable operating costs ev
         self.m.cost_ev_vom = Param(self.m.ev_tech)
-        # self.m.cost_ev_smart_vom = Param(self.m.ev_tech)
+        self.m.cost_ev_smart_vom = Param(self.m.ev_tech)
 
         # Technology lifetime in years
         self.m.all_tech_lifetime = Param(
@@ -232,6 +233,8 @@ class CreateModel():
         self.m.percent_smart_enabled = Param(default=0.5)
         # EV Fleet Batt Level Floor
         self.m.ev_level_floor = Param(default=0.2)
+        # % Fleet Smart EV Payment method
+        self.m.smart_fit_method = Param(default=1) # Defaults to FiT
 
         # Generator tech fixed charge rate
         self.m.fixed_charge_rate = Param(self.m.all_tech, initialize=init_fcr)
@@ -450,6 +453,7 @@ class CreateModel():
         self.m.ev_dumb_charge = Var(self.m.ev_tech_in_zones,  self.m.t, within=NonNegativeReals) #KP_MODIFIED
         self.m.ev_smart_charge = Var(self.m.ev_tech_in_zones,  self.m.t, within=NonNegativeReals) #KP_MODIFIED
         self.m.ev_num_vehs = Var(self.m.ev_tech_in_zones, within=NonNegativeReals) #number of installed vehicles
+        self.m.ev_num_smart_part = Var(self.m.ev_tech_in_zones, within=NonNegativeReals) #number of vehicles participating in smart charging program
 
 
 
@@ -575,6 +579,7 @@ class CreateModel():
         self.m.con_ev_trans_disp = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_trans_disp)
         # RULE 9 - DUMB CHARGING
         self.m.con_ev_dumb_charge = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_dumb_charge)
+        self.m.con_ev_dumb_charge_min = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_dumb_charge_min)
         # RULE 10 - SMART CHARGING
         self.m.con_ev_smart_charge = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_smart_charge)
         # RULE 7 - V2G DISPATCHED
@@ -591,6 +596,8 @@ class CreateModel():
         self.m.con_ev_flow_lim = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_flow_lim)
         # RULE 4 - BATTERY RESERVE LIMIT # Limit ev reserve capacity to be within storage level
         self.m.con_ev_reserve_lim = Constraint(self.m.ev_tech_in_zones, self.m.t, rule=con_ev_reserve_lim)
+        # RULE 12 - NUMBER OF VEHICLES PARTICIPATING IN SMART CHARGING PROGRAM
+        self.m.con_ev_num_smart_participating_vehicles = Constraint(self.m.ev_tech_in_zones, rule=con_ev_num_smart_participating_vehicles)
 
 
         ############################################################

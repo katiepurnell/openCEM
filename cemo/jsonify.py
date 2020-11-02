@@ -158,8 +158,8 @@ def jsonify(inst, year):
                 fill_scalar_key_param(inst.cost_ev_fom),
                 inst.cost_ev_vom.name:
                 fill_scalar_key_param(inst.cost_ev_vom),
-                # inst.cost_ev_smart_vom.name:
-                # fill_scalar_key_param(inst.cost_ev_smart_vom),
+                inst.cost_ev_smart_vom.name:
+                fill_scalar_key_param(inst.cost_ev_smart_vom),
                 inst.all_tech_lifetime.name:
                 fill_scalar_key_param(inst.all_tech_lifetime),
                 inst.fixed_charge_rate.name:
@@ -217,6 +217,8 @@ def jsonify(inst, year):
                 inst.percent_smart_enabled.value,
                 inst.ev_level_floor.name:
                 inst.ev_level_floor.value,
+                inst.smart_fit_method.name:
+                inst.smart_fit_method.value,
             },
             'vars': {
                 inst.gen_cap_new.name:
@@ -272,6 +274,8 @@ def jsonify(inst, year):
                 fill_complex_var(inst.ev_disp_transport),
                 inst.ev_num_vehs.name:
                 fill_complex_var(inst.ev_num_vehs),
+                inst.ev_num_smart_part.name:
+                fill_complex_var(inst.ev_num_smart_part),
                 inst.ev_charge.name:
                 fill_complex_var(inst.ev_charge),
 

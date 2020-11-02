@@ -428,25 +428,42 @@ def con_ev_v2g(model, z, e, t):
         return model.ev_v2g_disp[z, e, t] == 0
 
 # RULE 9: Set dumb charging profile
+#KP_MODIFIED 281020 TO LESS THAN OR EQUAL TO -> THIS IS THE MAXIMUM, DON'T NEED TO TAKE INTO CONSIDERATION SMART CHARGE TECH AS IT WILL OPTIMISE THAT AND THEN DO THIS.
 def con_ev_dumb_charge(model, z, e, t): # in MWh, hourly basis #KP_MODIFIED_070920 to be in GWh and see if that works
-    if e in model.smart_charge_tech:
-        return model.ev_dumb_charge[z, e, t] == model.ev_charge_dumb_trace[z,e, t]/1000 * model.ev_num_vehs[z, e] * (1-model.percent_smart_enabled)# / model.ev_rt_eff[e] #KP_MODIFIED_010920 to remove efficiency from dumb charging trace as its already included in the external program
+    # if e in model.smart_charge_tech:
+    return model.ev_dumb_charge[z, e, t] <= model.ev_charge_dumb_trace[z,e, t]/1000 * model.ev_num_vehs[z, e] #* (1-model.percent_smart_enabled)# / model.ev_rt_eff[e] #KP_MODIFIED_010920 to remove efficiency from dumb charging trace as its already included in the external program
         #KP_MODIFIED_180820_2 changed from model.ev_charge_dumb_trace[z, e, t] * model.ev_num_vehs[z, e] and created below rule to convert
-    else: #KP_MODIFIED_010920 to include no smart charging for freight
-        return model.ev_dumb_charge[z, e, t] == model.ev_charge_dumb_trace[z,e, t]/1000 * model.ev_num_vehs[z, e]# * (1-model.percent_smart_enabled)# / model.ev_rt_eff[e] #KP_MODIFIED_010920 to remove efficiency from dumb charging trace as its already included in the external program
+    # else: #KP_MODIFIED_010920 to include no smart charging for freight
+        # return model.ev_dumb_charge[z, e, t] == model.ev_charge_dumb_trace[z,e, t]/1000 * model.ev_num_vehs[z, e]# * (1-model.percent_smart_enabled)# / model.ev_rt_eff[e] #KP_MODIFIED_010920 to remove efficiency from dumb charging trace as its already included in the external program
         #KP_MODIFIED_180820_2 changed from model.ev_charge_dumb_trace[z, e, t] * model.ev_num_vehs[z, e] and created below rule to convert
+
+# RULE 9.5: Set minimum dumb charging profile
+def con_ev_dumb_charge_min(model, z, e, t): # in MWh, hourly basis #KP_MODIFIED_070920 to be in GWh and see if that works
+    # if e in model.smart_charge_tech:
+    return model.ev_dumb_charge[z, e, t] >= model.ev_charge_dumb_trace[z,e, t]/1000 * model.ev_num_vehs[z, e] * (1-model.percent_smart_enabled)
 
 # RULE 10: Set smart charging profile - absolute limit of smart charging (max charge rate * num veh * prop connected * prop willing to participate) -> efficiency ISN'T included here because this is the maximum the grid can provide. Need to include in the load balance for the battery.
 def con_ev_smart_charge(model,z,e,t):
     if e in model.smart_charge_tech:
-        return model.ev_smart_charge[z,e,t] <= model.ev_num_vehs[z,e] * model.ev_connected[z,e, t] * model.ev_max_charge_rate[e] * model.percent_smart_enabled # / model.ev_rt_eff[e]
+        if model.v2g_enabled > 0:
+            return model.ev_smart_charge[z,e,t] <= model.ev_num_vehs[z,e] * model.ev_connected[z,e, t] * model.ev_max_charge_rate[e] * model.percent_smart_enabled # / model.ev_rt_eff[e]
+        elif model.smart_fit_method == 1: #FiT Charging
+            return model.ev_smart_charge[z,e,t] <= model.ev_num_vehs[z,e] * model.ev_connected[z,e, t] * model.ev_max_charge_rate[e] * model.percent_smart_enabled # / model.ev_rt_eff[e]
+        elif model.smart_fit_method == 0: #Yearly payment to participate
+            return model.ev_smart_charge[z,e,t] <= model.ev_num_smart_part[z,e] * model.ev_connected[z,e, t] * model.ev_max_charge_rate[e] * model.percent_smart_enabled
     else: #KP_MODIFIED_010920 to include no smart charging for freight
         return model.ev_smart_charge[z,e,t] == 0
-
 
 # RULE 11: Number of vehicles
 def con_ev_num_vehicles(model,z,e): #KP_MODIFIED_010920 removed t for this rule
     return model.ev_num_vehs[z,e] == model.ev_cap_op[z, e] / model.ev_batt_size[e]
+
+# RULE 13: Number of vehicles participating in smart charging program (yearly)
+def con_ev_num_smart_participating_vehicles(model,z,e): #KP_MODIFIED_010920 removed t for this rule
+    if model.smart_fit_method == 0:
+        return model.ev_num_smart_part[z,e] <= model.ev_num_vehs[z,e] * model.percent_smart_enabled
+    elif model.smart_fit_method == 1: #FiT Charging
+        return model.ev_num_smart_part[z,e] == 0
 
 # RULE 8: Set charging level to trace if dumb charging, and limit to amount of vehicles connected and the charge rate otherwise
 def con_ev_level_max(model, z, e, t): #From the perspective of the grid - total dumb charging (already includes losses) and total smart - from grids perspective not cars.
@@ -766,12 +783,24 @@ def cost_v2g_payments(model):
               for e in model.ev_tech_per_zone[z] for t in model.t)
         )
 
-# def cost_smart_payments(model):
-#     return model.year_correction_factor * (
-#         sum(model.cost_ev_smart_vom[e] * model.ev_smart_charge[z, e, t]
-#               for z in model.zones
-#               for e in model.ev_tech_per_zone[z] for t in model.t)
-#         )
+def cost_smart_payments(model):
+    if model.percent_v2g_enabled > 0:
+        return 0
+    else:
+        if model.smart_fit_method == 0: #yearly one off payment to each vehicle owner
+            # print("Yearly one off payments")
+            # No need to multiply by year correction factor as this is a one off payment for the year
+            return (sum(model.cost_ev_smart_vom[e] * model.ev_num_smart_part[z,e]
+                      for z in model.zones
+                      for e in model.ev_tech_per_zone[z])
+                )
+        elif model.smart_fit_method == 1:#FiT per kWh smart charged
+            # print("Smart FiT Payments")
+            return model.year_correction_factor * (
+                sum(model.cost_ev_smart_vom[e] * model.ev_smart_charge[z, e, t]
+                      for z in model.zones
+                      for e in model.ev_tech_per_zone[z] for t in model.t)
+                )
 
 
 def cost_fuel_non_flexible(model, zone, tech, time):
@@ -815,7 +844,7 @@ def system_cost(model):
     return cost_capital(model) + cost_repayment(model)\
         + cost_fixed(model) + cost_unserved(model) + cost_operating(model)\
         + cost_trans_build(model) + cost_trans_flow(model) + cost_emissions(model)\
-        + cost_retirement(model) + cost_v2g_payments(model)# + cost_smart_payments(model)
+        + cost_retirement(model) + cost_v2g_payments(model) + cost_smart_payments(model)
 
 
 def obj_cost(model):
